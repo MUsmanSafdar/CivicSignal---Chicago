@@ -1,0 +1,6 @@
+streamlit>=1.32
+pandas>=2.0
+plotly>=5.18,<7
+python-dotenv>=1.0
+pdfplumber>=0.10
+openpyxl>=3.1
