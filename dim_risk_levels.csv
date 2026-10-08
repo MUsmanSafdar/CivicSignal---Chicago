@@ -1,0 +1,5 @@
+﻿"risk_level","sort_order","hex_color"
+"Low","1","#2e9e5b"
+"Medium","2","#a9d9b6"
+"High","3","#f1a59d"
+"Very High","4","#c62828"

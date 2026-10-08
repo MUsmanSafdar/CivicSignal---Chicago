@@ -1,0 +1,2 @@
+report_id,submitted_at,county,region,hazard,damage_type,severity,people_affected,operational_summary,pii_removed,status,source,last_updated
+R001,2026-06-12 09:30,Cook,Northeast,Flooding,Residential flooding,High,2,Basement flooding reported after heavy rainfall; blocked drainage suspected,Yes,Open,Sample intake prototype,2026-06-12

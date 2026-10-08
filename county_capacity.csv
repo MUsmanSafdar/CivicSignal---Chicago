@@ -1,0 +1,8 @@
+county,region,hazard,mitigation_effort,status,people_affected,budget_usd,amount_spent_usd,lead_agency,start_date,target_date
+Cook,Northeast,Flood,Flood early warning system,In Progress,678724,37000000,14252030,USACE,2024-07-20,2025-01-27
+DuPage,Northeast,Severe Storm,Municipal tree management program,In Progress,117934,12000000,6507534,IDOT,2024-06-29,2025-05-03
+Kane,Northeast,Flood,Levee reinforcement,Planning,73945,13000000,1579311,IEMA-OHS,2023-10-11,2024-05-23
+Kendall,Northeast,Severe Storm,Municipal tree management program,Active,10094,4000000,2363826,IDOT,2024-01-14,2026-02-28
+Lake,Northeast,Winter Storm,Road pre-treatment and de-icing program,Active,143884,18000000,13350098,County EM Office,2023-07-01,2025-02-22
+McHenry,Northeast,Winter Storm,Road pre-treatment and de-icing program,Active,52935,2000000,971389,IDPH,2024-05-01,2026-07-15
+Will,Northeast,Flood,Flood early warning system,In Progress,65497,12000000,4082971,USACE,2023-03-17,2025-04-25

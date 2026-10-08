@@ -1,0 +1,50 @@
+county,region,hazard,risk_score,risk_level,svi_score
+Cook,Northeast,Flood,2.5,Medium,0.5
+Cook,Northeast,Tornado,2.0,Medium,0.5
+Cook,Northeast,Earthquake,0.5,Low,0.5
+Cook,Northeast,Severe Storm,2.8,Medium,0.5
+Cook,Northeast,Winter Storm,3.5,High,0.5
+Cook,Northeast,Drought,1.8,Medium,0.5
+DuPage,Northeast,Flood,2.0,Medium,0.08
+DuPage,Northeast,Tornado,2.0,Medium,0.08
+DuPage,Northeast,Earthquake,0.5,Low,0.08
+DuPage,Northeast,Severe Storm,2.5,Medium,0.08
+DuPage,Northeast,Winter Storm,3.5,High,0.08
+DuPage,Northeast,Drought,1.8,Medium,0.08
+Kane,Northeast,Flood,2.5,Medium,0.35
+Kane,Northeast,Tornado,2.2,Medium,0.35
+Kane,Northeast,Earthquake,0.5,Low,0.35
+Kane,Northeast,Severe Storm,2.5,Medium,0.35
+Kane,Northeast,Winter Storm,3.5,High,0.35
+Kane,Northeast,Drought,2.0,Medium,0.35
+Kendall,Northeast,Flood,2.2,Medium,0.12
+Kendall,Northeast,Tornado,2.2,Medium,0.12
+Kendall,Northeast,Earthquake,0.5,Low,0.12
+Kendall,Northeast,Severe Storm,2.5,Medium,0.12
+Kendall,Northeast,Winter Storm,3.2,High,0.12
+Kendall,Northeast,Drought,2.0,Medium,0.12
+Lake,Northeast,Flood,2.0,Medium,0.22
+Lake,Northeast,Tornado,1.8,Medium,0.22
+Lake,Northeast,Earthquake,0.5,Low,0.22
+Lake,Northeast,Severe Storm,2.5,Medium,0.22
+Lake,Northeast,Winter Storm,4.0,Very High,0.22
+Lake,Northeast,Drought,1.5,Medium,0.22
+McHenry,Northeast,Flood,2.0,Medium,0.15
+McHenry,Northeast,Tornado,2.0,Medium,0.15
+McHenry,Northeast,Earthquake,0.5,Low,0.15
+McHenry,Northeast,Severe Storm,2.5,Medium,0.15
+McHenry,Northeast,Winter Storm,4.0,Very High,0.15
+McHenry,Northeast,Drought,1.8,Medium,0.15
+Will,Northeast,Flood,2.5,Medium,0.3
+Will,Northeast,Tornado,2.5,Medium,0.3
+Will,Northeast,Earthquake,0.5,Low,0.3
+Will,Northeast,Severe Storm,2.8,Medium,0.3
+Will,Northeast,Winter Storm,3.2,High,0.3
+Will,Northeast,Drought,2.2,Medium,0.3
+Cook,Northeast,Extreme Heat,3.4,High,0.5
+DuPage,Northeast,Extreme Heat,2.8,Medium,0.08
+Kane,Northeast,Extreme Heat,2.7,Medium,0.35
+Kendall,Northeast,Extreme Heat,2.4,Medium,0.12
+Lake,Northeast,Extreme Heat,2.5,Medium,0.22
+McHenry,Northeast,Extreme Heat,2.4,Medium,0.15
+Will,Northeast,Extreme Heat,2.8,Medium,0.3

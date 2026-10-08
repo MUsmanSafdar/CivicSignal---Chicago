@@ -1,0 +1,14 @@
+county,shelter_name,address,city,zip,capacity,shelter_type,phone,open_24h
+Cook,Chicago Red Cross Emergency Shelter - West Side,2200 W Harrison St,Chicago,60612,500,General Emergency,312-729-6100,Yes
+Cook,McCormick Place Emergency Shelter,2301 S Lake Shore Dr,Chicago,60616,2000,Mass Care,312-791-7000,Yes
+Cook,Evanston Civic Center,2100 Ridge Ave,Evanston,60201,300,General Emergency,847-448-4311,Yes
+Cook,Skokie Village Hall,5127 Oakton St,Skokie,60077,200,General Emergency,847-673-0500,Yes
+DuPage,Wheaton Park District Community Center,101 N County Farm Rd,Wheaton,60187,400,General Emergency,630-510-4600,Yes
+DuPage,Downers Grove Recreation Center,4500 Belmont Rd,Downers Grove,60515,250,Cooling / Warming Center,630-963-1304,No
+Kane,Elgin Recreation Center,100 Symphony Way,Elgin,60120,350,General Emergency,847-931-6120,Yes
+Kane,Aurora Civic Center,44 E Downer Pl,Aurora,60505,400,General Emergency,630-256-3400,Yes
+Lake,Lake County Fairgrounds,1060 E Peterson Rd,Grayslake,60030,600,General Emergency,847-223-3975,Yes
+Lake,Waukegan Civic Center,100 N Martin Luther King Jr Ave,Waukegan,60085,300,General Emergency,847-599-2500,Yes
+McHenry,McHenry County Fairgrounds,11900 Country Club Rd,Woodstock,60098,450,General Emergency,815-338-6611,Yes
+Will,Joliet Junior College Main Campus,1215 Houbolt Rd,Joliet,60431,500,General Emergency,815-729-9020,Yes
+Will,Bolingbrook Recreation and Aquatic Center,201 Recreation Dr,Bolingbrook,60440,300,Cooling / Warming Center,630-739-1600,No

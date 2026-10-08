@@ -1,0 +1,15 @@
+complaint_id,county,hazard,category,description,date_filed,priority,status,date_resolved
+C0032,Cook,Flood,Infrastructure Damage,Retaining wall failure near residential area,2024-07-17,Medium,Open,
+C0033,Cook,Winter Storm,Road Closure,State Route blocked by debris from landslide,2024-12-23,Medium,Resolved,2025-01-18
+C0047,DuPage,Tornado,Evacuation Support,Evacuation order not communicated to rural area,2024-07-14,Low,Open,
+C0048,DuPage,Flood,Evacuation Support,Evacuation order not communicated to rural area,2024-03-05,Medium,Resolved,2024-04-05
+C0097,Kane,Tornado,Environmental Hazard,Chemical spill near residential area reported,2024-10-08,Critical,Resolved,2024-12-04
+C0100,Kendall,Tornado,Public Health Concern,Mental health crisis services unavailable at shelter,2024-02-20,Medium,Resolved,2024-04-09
+C0101,Kendall,Tornado,Environmental Hazard,Chemical spill near residential area reported,2024-10-20,Medium,Resolved,2024-11-23
+C0102,Kendall,Severe Storm,Shelter Access,Shelter lacks generator power,2024-10-31,Medium,Open,
+C0108,Lake,Severe Storm,Utility Outage,Wastewater treatment plant offline due to flooding,2025-05-25,High,Resolved,2025-06-14
+C0109,Lake,Winter Storm,Shelter Access,Emergency shelter at capacity,2024-08-09,Medium,Open,
+C0132,McHenry,Tornado,Infrastructure Damage,Drainage system failure causing backflow,2024-03-04,High,Open,
+C0133,McHenry,Severe Storm,Evacuation Support,Evacuation order not communicated to rural area,2024-10-05,Low,Open,
+C0207,Will,Flood,Utility Outage,Natural gas supply interrupted post-earthquake,2024-04-10,Critical,Open,
+C0208,Will,Tornado,Infrastructure Damage,Retaining wall failure near residential area,2024-04-03,Medium,Open,
