@@ -81,6 +81,8 @@ def _logo_html():
     from pathlib import Path
     p = Path(__file__).parent / "assets" / "logo.png"
     if not p.exists():
+        p = Path(__file__).parent / "logo.png"
+    if not p.exists():
         return ""
     b = base64.b64encode(p.read_bytes()).decode()
     return f'<img src="data:image/png;base64,{b}" alt="" style="height:1.1em;vertical-align:-0.15em;margin-right:0.35em">'

@@ -11,7 +11,8 @@ import streamlit as st
 
 import chatbot_engine
 
-DATA = Path(__file__).resolve().parent / "data"
+_ROOT = Path(__file__).resolve().parent
+DATA = _ROOT / "data" if (_ROOT / "data" / "cooling_centers.csv").exists() else _ROOT
 GREEN, NEUTRAL, RED = "#2e9e5b", "#f4f1ea", "#c62828"
 RG_SCALE = [[0.0, GREEN], [0.5, NEUTRAL], [1.0, RED]]
 CHICAGO_CENTER = {"lat": 41.85, "lon": -87.95}

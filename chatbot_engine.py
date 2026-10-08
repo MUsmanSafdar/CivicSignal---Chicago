@@ -15,7 +15,8 @@ from pathlib import Path
 from datetime import datetime
 from functools import lru_cache
 
-_DATA_DIR = Path(__file__).resolve().parent / "data"
+_ROOT = Path(__file__).resolve().parent
+_DATA_DIR = _ROOT / "data" if (_ROOT / "data" / "cooling_centers.csv").exists() else _ROOT
 
 # ── Reference table loader (cached per session) ───────────────────────────────
 
