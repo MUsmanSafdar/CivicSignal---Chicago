@@ -1,0 +1,467 @@
+<title>CivicSignal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: sticky nav, hero with live map, one interactive explorer, three data stories, then proof and contact. */
+:root{
+  --bg:#f5f8fc; --surface:#ffffff; --ink:#0e1b2e; --muted:#566a82; --line:#d9e3f0;
+  --brand:#0a62d0; --brand-ink:#ffffff; --navy:#0b1626; --navy-ink:#eef4fb; --navy-muted:#9db3cc;
+  --risk0:#fde9cc; --risk1:#f8bd70; --risk2:#ee7b3b; --risk3:#cf3f2c; --risk4:#8a1c1f;
+  --svi0:#e4eefc; --svi1:#acc9f4; --svi2:#5c96e6; --svi3:#2f60c4; --svi4:#1b2c76;
+  --good:#17784a; --good-bg:#dff3e8; --warn:#8a5a00; --warn-bg:#fbeccd; --bad:#a3271f; --bad-bg:#f9dedb;
+  --dim:#e8eef6; --focus:#0a62d0;
+  --display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif; --body:'Public Sans','Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#08121f; --surface:#0f1d30; --ink:#eaf1fa; --muted:#9db2ca; --line:#223652; --brand:#5aa6ff; --brand-ink:#04101f;
+  --navy:#050d18; --risk0:#35261f; --risk1:#7a4426; --risk2:#c4622f; --risk3:#ee8a4a; --risk4:#ffc47e;
+  --svi0:#18274a; --svi1:#27488a; --svi2:#4880d4; --svi3:#79adf3; --svi4:#c3dcff;
+  --good:#6fd4a2; --good-bg:#12382a; --warn:#f0c46c; --warn-bg:#3b2d0f; --bad:#f09a92; --bad-bg:#43201d; --dim:#17283f; --focus:#8cc0ff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#08121f; --surface:#0f1d30; --ink:#eaf1fa; --muted:#9db2ca; --line:#223652; --brand:#5aa6ff; --brand-ink:#04101f;
+  --navy:#050d18; --risk0:#35261f; --risk1:#7a4426; --risk2:#c4622f; --risk3:#ee8a4a; --risk4:#ffc47e;
+  --svi0:#18274a; --svi1:#27488a; --svi2:#4880d4; --svi3:#79adf3; --svi4:#c3dcff;
+  --good:#6fd4a2; --good-bg:#12382a; --warn:#f0c46c; --warn-bg:#3b2d0f; --bad:#f09a92; --bad-bg:#43201d; --dim:#17283f; --focus:#8cc0ff; color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}
+h1,h2,h3{font-family:var(--display);line-height:1.08;letter-spacing:-.015em;text-wrap:balance;margin:0}
+h1{font-size:clamp(38px,6.2vw,72px);font-weight:800}
+h2{font-size:clamp(28px,3.8vw,44px);font-weight:800}
+h3{font-size:21px;font-weight:700;letter-spacing:-.005em}
+p{margin:0}
+a{color:var(--brand)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1232px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand)}
+.lede{font-size:clamp(18px,2vw,22px);color:var(--muted);max-width:62ch}
+section{padding-block:72px}
+.band{background:var(--surface);border-block:1px solid var(--line)}
+.btn{display:inline-flex;align-items:center;gap:8px;font:600 16px var(--body);padding:13px 22px;border-radius:10px;border:1.5px solid var(--brand);background:var(--brand);color:var(--brand-ink);text-decoration:none;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--brand)}
+.btn:hover{filter:brightness(1.06)}
+/* nav */
+nav.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav.top .wrap{display:flex;align-items:center;gap:20px;min-height:64px;flex-wrap:wrap;padding-block:6px}
+.brand{display:flex;align-items:center;gap:10px;font:800 21px var(--display);color:var(--ink);text-decoration:none}
+.brand img{width:34px;height:34px;border-radius:50%;background:#fff;padding:3px;border:1px solid var(--line)}
+nav.top .links{display:flex;gap:6px 22px;flex-wrap:wrap;margin-left:auto;align-items:center}
+nav.top .links a{font-size:15px;font-weight:500;color:var(--muted);text-decoration:none}
+nav.top .links a:hover{color:var(--ink)}
+nav.top .links .btn{padding:8px 16px;font-size:15px;color:var(--brand-ink)}
+/* hero */
+.hero{padding-top:64px;padding-bottom:56px}
+.hero .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center}
+.hero .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+.hero h1 em{font-style:normal;color:var(--brand)}
+.hero .lede{margin-top:22px}
+.herofig{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;position:relative}
+.herofig svg{display:block;width:auto;height:min(520px,62vw);max-width:100%;margin:0 auto}
+.herofig .tag{display:block;text-align:center;font-size:13px;color:var(--muted);margin-top:10px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:48px;border-top:1px solid var(--line)}
+.stats div{padding:20px 20px 0 0}
+.stats b{display:block;font:800 clamp(32px,4vw,46px) var(--display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stats span{font-size:15px;color:var(--muted)}
+/* problem */
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:36px}
+.three>div{border-top:2px solid var(--ink);padding-top:16px}
+.three p{color:var(--muted);margin-top:8px;font-size:16px}
+/* explorer */
+.head{display:flex;flex-direction:column;gap:12px;margin-bottom:28px}
+.ctrl{display:flex;gap:10px 22px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button,.chip{font:600 14px var(--body);padding:8px 14px;border-radius:99px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg button:hover{border-color:var(--brand)}
+select{font:500 15px var(--body);padding:8px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
+label.sm{font-size:14px;color:var(--muted);font-weight:600}
+.explorer{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:24px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px}
+.mapbox svg{display:block;width:100%;height:auto;max-height:640px;margin:0 auto}
+.co{stroke:var(--surface);stroke-width:.8;cursor:pointer;transition:opacity .15s}
+.co:hover{stroke:var(--ink);stroke-width:1.6}
+.co.sel{stroke:var(--ink);stroke-width:2.4}
+.co.off{opacity:.22}
+.legend{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin-top:12px;flex-wrap:wrap}
+.legend i{display:block;width:180px;height:10px;border-radius:5px}
+.detail h3{font-size:30px;font-family:var(--display)}
+.detail .sub{color:var(--muted);font-size:15px;margin-top:2px}
+.badge{display:inline-block;font-size:13px;font-weight:700;padding:4px 11px;border-radius:99px;margin-top:10px}
+.badge.bad{background:var(--bad-bg);color:var(--bad)} .badge.ok{background:var(--good-bg);color:var(--good)} .badge.warn{background:var(--warn-bg);color:var(--warn)}
+.rows{display:grid;gap:10px;margin-top:18px}
+.row{display:grid;grid-template-columns:104px 1fr 40px;gap:10px;align-items:center;font-size:15px}
+.row .bar{height:12px;background:var(--dim);border-radius:6px;position:relative}
+.row .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;display:block}
+.row .bar u{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);opacity:.55}
+.row b{font-variant-numeric:tabular-nums;text-align:right}
+.row.hot{font-weight:700}
+.toplist{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+.toplist h4{margin:0 0 8px;font:700 13px var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.toplist ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.toplist button{all:unset;display:grid;grid-template-columns:24px 1fr auto;gap:8px;width:100%;cursor:pointer;padding:5px 6px;border-radius:8px;font-size:15px}
+.toplist button:hover,.toplist button:focus-visible{background:var(--dim)}
+.toplist button span:last-child{font-weight:700;font-variant-numeric:tabular-nums}
+.note{font-size:14px;color:var(--muted);margin-top:16px;max-width:80ch}
+/* scatter */
+.story{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:36px;align-items:start}
+.story .txt{display:flex;flex-direction:column;gap:16px}
+.sliders{display:grid;gap:12px;margin-top:6px}
+.sliders label{display:grid;grid-template-columns:1fr auto;font-size:14px;font-weight:600;color:var(--muted);gap:2px 10px}
+.sliders input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--brand)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{padding:5px 11px;font-size:13.5px}
+.chip:hover{border-color:var(--bad)}
+.bignum{font:800 54px var(--display);letter-spacing:-.02em;color:var(--bad);line-height:1}
+svg text{font-family:var(--body);fill:var(--muted);font-size:12.5px}
+svg text.hl{paint-order:stroke;stroke:var(--surface);stroke-width:5px;stroke-linejoin:round}
+.tt{position:fixed;z-index:80;pointer-events:none;background:var(--ink);color:var(--bg);font-size:13.5px;padding:7px 11px;border-radius:8px;max-width:240px;line-height:1.35;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.tt b{display:block}
+/* regions */
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.card h3{margin-bottom:4px} .card .sub{font-size:14.5px;color:var(--muted);margin-bottom:14px}
+/* how */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:34px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px}
+.step h3{font-size:19px;margin-bottom:6px} .step p{font-size:15px;color:var(--muted)}
+.rank{margin-top:28px;display:grid;gap:10px}
+.rk{display:grid;grid-template-columns:70px 1fr auto;gap:16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 20px}
+.rk .sc{font:800 30px var(--display);color:var(--brand);font-variant-numeric:tabular-nums}
+.rk b{display:block;font-size:17px} .rk span.why{font-size:14.5px;color:var(--muted)}
+.pill{font-size:13.5px;font-weight:700;padding:5px 13px;border-radius:99px;white-space:nowrap}
+.pill.ok{background:var(--good-bg);color:var(--good)} .pill.no{background:var(--bad-bg);color:var(--bad)} .pill.rv{background:var(--warn-bg);color:var(--warn)}
+/* trust & use */
+.four{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:32px}
+.four .card h3{margin-bottom:8px;font-size:20px} .four .card p{color:var(--muted);font-size:16px}
+.uses{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:32px}
+.uses div{border-left:3px solid var(--brand);padding:2px 0 2px 16px} .uses p{color:var(--muted);font-size:15.5px;margin-top:6px}
+/* about */
+.about{display:grid;grid-template-columns:auto 1fr;gap:36px;align-items:center}
+.mono{width:150px;height:150px;border-radius:50%;background:var(--brand);color:var(--brand-ink);display:flex;align-items:center;justify-content:center;font:800 54px var(--display)}
+.cta-band{background:var(--navy);color:var(--navy-ink);border-radius:26px;padding:clamp(28px,5vw,60px);display:grid;gap:18px}
+.cta-band p{color:var(--navy-muted);max-width:58ch;font-size:19px}
+.cta-band .btn{background:var(--brand);color:var(--brand-ink)}
+footer{padding-block:30px 48px;font-size:14px;color:var(--muted)}
+footer p{max-width:100ch;margin-top:8px}
+@media (max-width:900px){
+  .hero .grid,.explorer,.story,.two{grid-template-columns:minmax(0,1fr)}
+  .stats,.uses{grid-template-columns:repeat(2,1fr)} .steps{grid-template-columns:repeat(2,1fr)}
+  .three,.four{grid-template-columns:minmax(0,1fr)} section{padding-block:52px}
+  nav.top .links a:not(.btn){display:none}
+}
+@media (max-width:520px){.about{grid-template-columns:1fr}.rk{grid-template-columns:56px 1fr}.rk .pill{grid-column:2;justify-self:start}.steps{grid-template-columns:minmax(0,1fr)}.row{grid-template-columns:92px 1fr 36px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<nav class="top"><div class="wrap">
+  <a class="brand" href="#top"><img alt="" src="data:image/png;base64,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">CivicSignal</a>
+  <div class="links"><a href="#explorer">Explorer</a><a href="#overlap">Risk meets vulnerability</a><a href="#how">How it works</a><a href="#trust">Trust</a><a href="#contact" class="btn">Request a pilot</a></div>
+</div></nav>
+
+<header id="top" class="hero"><div class="wrap">
+  <div class="grid">
+    <div>
+      <p class="eyebrow">Hazard-mitigation decision support</p>
+      <h1 style="margin-top:14px">Fund where risk and vulnerability <em>meet.</em></h1>
+      <p class="lede">CivicSignal turns hazard and social-vulnerability data into a ranked, explainable list of mitigation projects. Every recommendation shows its reasons, and a named official makes the decision.</p>
+      <div class="cta"><a class="btn" href="#explorer">Explore Illinois</a><a class="btn ghost" href="#how">See how it ranks projects</a></div>
+    </div>
+    <div class="herofig"><svg id="heroMap" role="img" aria-label="Map of Illinois counties shaded by social vulnerability score"></svg><span class="tag">Illinois counties, shaded by social vulnerability</span></div>
+  </div>
+  <div class="stats" id="stats"></div>
+</div></header>
+
+<section class="band"><div class="wrap">
+  <p class="eyebrow">The problem</p>
+  <h2 style="margin-top:10px;max-width:22ch">Mitigation money is limited. The case for each dollar has to hold up.</h2>
+  <div class="three">
+    <div><h3>Scattered data</h3><p>Hazard, vulnerability and capacity data sit in different files and systems.</p></div>
+    <div><h3>Slow interpretation</h3><p>Turning spreadsheets into priorities takes weeks, and the reasoning is hard to explain afterward.</p></div>
+    <div><h3>Eligibility surprises</h3><p>Strong projects get returned for gaps that could have been caught at the start.</p></div>
+  </div>
+</div></section>
+
+<section id="explorer"><div class="wrap">
+  <div class="head">
+    <p class="eyebrow">Illinois explorer</p>
+    <h2>See every county on one map.</h2>
+    <p class="lede">Switch between social vulnerability and six hazards. Click a county for its full profile.</p>
+  </div>
+  <div class="ctrl">
+    <div class="seg" id="metricSeg" role="group" aria-label="Choose what the map shows"></div>
+    <label class="sm">Region <select id="regionSel"></select></label>
+  </div>
+  <div class="explorer">
+    <div class="card mapbox">
+      <svg id="map" role="img" aria-label="Interactive map of Illinois counties"></svg>
+      <div class="legend"><span id="legLo"></span><i id="legBar"></i><span id="legHi"></span></div>
+    </div>
+    <div class="card detail" id="detail" aria-live="polite"></div>
+  </div>
+  <p class="note">Scores come from this project's Illinois dataset. Hazard scores are illustrative until replaced with agency data. Social vulnerability runs from 0 (least vulnerable) to 1 (most vulnerable).</p>
+</div></section>
+
+<section class="band" id="overlap"><div class="wrap">
+  <div class="story">
+    <div class="txt">
+      <p class="eyebrow">Where risk meets vulnerability</p>
+      <h2>The counties that need help most are the ones high on both.</h2>
+      <p class="lede" style="font-size:18px">Each dot is a county. Set what counts as high, and CivicSignal highlights the counties that are above both lines.</p>
+      <div class="seg" id="hzSeg" role="group" aria-label="Choose a hazard"></div>
+      <div class="sliders">
+        <label>High hazard score at or above <b id="hzVal"></b><input id="hzTh" type="range" min="1" max="5" step="0.1"></label>
+        <label>High vulnerability at or above <b id="svVal"></b><input id="svTh" type="range" min="0.3" max="0.95" step="0.01"></label>
+      </div>
+      <div><div class="bignum" id="priN">0</div><p id="priTxt" style="color:var(--muted);margin-top:4px"></p></div>
+      <div class="chips" id="priChips"></div>
+    </div>
+    <div class="card"><svg id="scatter" role="img" aria-label="Scatter plot of county social vulnerability against hazard score"></svg></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="head"><p class="eyebrow">Social vulnerability, by region</p><h2>Vulnerability is not spread evenly.</h2>
+  <p class="lede">Regional averages and the full county spread show where communities have the least capacity to recover.</p></div>
+  <div class="two">
+    <div class="card"><h3>Average by region</h3><p class="sub">Dark line marks the state average.</p><svg id="regions" role="img" aria-label="Bar chart of average social vulnerability by region"></svg></div>
+    <div class="card"><h3>How the 102 counties spread</h3><p class="sub">Number of counties in each score band.</p><svg id="hist" role="img" aria-label="Histogram of county social vulnerability scores"></svg></div>
+  </div>
+</div></section>
+
+<section class="band" id="trend" hidden><div class="wrap">
+  <div class="head"><p class="eyebrow">Change over time</p><h2>How vulnerability has moved.</h2><p class="lede" id="trendLede"></p></div>
+  <div class="two"><div class="card"><h3>Average score by release year</h3><p class="sub" id="trendSub"></p><svg id="trendLine" role="img" aria-label="Line chart of social vulnerability over time"></svg></div>
+  <div class="card"><h3>Largest changes</h3><p class="sub">Counties whose score moved most between the first and last release.</p><div id="trendMovers"></div></div></div>
+</div></section>
+
+<section id="how"><div class="wrap">
+  <p class="eyebrow">How it works</p>
+  <h2 style="margin-top:10px;max-width:20ch">From raw facts to a decision on record.</h2>
+  <div class="steps">
+    <div class="step"><h3>Gather</h3><p>Project details, hazard exposure and social vulnerability in one place.</p></div>
+    <div class="step"><h3>Check</h3><p>Each project is tested against program rules. Missing facts show as Pending.</p></div>
+    <div class="step"><h3>Rank</h3><p>Weighted scores put the strongest projects first, with the reasons visible.</p></div>
+    <div class="step"><h3>Decide</h3><p>A named official approves, holds or ranks provisionally. The choice is logged.</p></div>
+  </div>
+  <div class="rank" aria-label="Example ranked projects">
+    <div class="rk"><span class="sc">80.7</span><div><b>Elevate 14 repetitive-loss homes</b><span class="why">All three program rules pass.</span></div><span class="pill ok">Eligible</span></div>
+    <div class="rk"><span class="sc">78.8</span><div><b>Buy out 6 parcels, Oak Hollow</b><span class="why">Mitigation plan expired. Renew it, then resubmit.</span></div><span class="pill no">Not eligible</span></div>
+    <div class="rk"><span class="sc">73.1</span><div><b>Drainage fix, Lakeview manufactured-home park</b><span class="why">Applicant is a private nonprofit. A county or city could sponsor it.</span></div><span class="pill no">Not eligible</span></div>
+    <div class="rk"><span class="sc">72.5</span><div><b>Upsize culverts, Mill Creek Road</b><span class="why">Flood-program status is not on file. This is a hold, not a denial.</span></div><span class="pill rv">Review</span></div>
+  </div>
+  <p class="note">Example projects with sample values, shown to illustrate the workflow.</p>
+</div></section>
+
+<section class="band" id="trust"><div class="wrap">
+  <p class="eyebrow">Built to be trusted</p>
+  <h2 style="margin-top:10px;max-width:22ch">Software prepares the decision. A person makes it.</h2>
+  <div class="four">
+    <div class="card"><h3>Fail-closed eligibility</h3><p>A project counts as eligible only when every rule passes. Unknown facts are flagged, never assumed.</p></div>
+    <div class="card"><h3>Provisional ranking with a reason</h3><p>Pending projects can still be ranked, but only with a written justification from a named official.</p></div>
+    <div class="card"><h3>Tamper-evident record</h3><p>Every determination and decision is chained to the one before it, so changes to history can be detected.</p></div>
+    <div class="card"><h3>AI that summarizes, never decides</h3><p>Models read documents and answer from sourced text. They cannot approve, rank or edit anything.</p></div>
+  </div>
+  <div class="uses">
+    <div><h3>Emergency management</h3><p>Brief leadership with one clear risk picture.</p></div>
+    <div><h3>Mitigation planning</h3><p>Rank projects and document the reasoning.</p></div>
+    <div><h3>Local government</h3><p>Find eligibility gaps before an application does.</p></div>
+    <div><h3>Community engagement</h3><p>Show residents where funds go and why.</p></div>
+  </div>
+</div></section>
+
+<section id="contact"><div class="wrap">
+  <div class="about card" style="margin-bottom:28px">
+    <div class="mono" aria-hidden="true">MU</div>
+    <div><h3 style="font-size:26px">Muhammad Usman</h3><p style="color:var(--muted);margin-top:6px">University of Chicago Booth School of Business, in work with the Polsky Center. Creator of CivicSignal and the Illinois hazard dashboard, with hands-on experience in hazard mitigation, data analysis, GIS and public-sector problem solving.</p></div>
+  </div>
+  <div class="cta-band">
+    <p class="eyebrow" style="color:var(--navy-muted)">Pilot with your team</p>
+    <h2>Try CivicSignal on one real prioritization cycle.</h2>
+    <p>We are looking for emergency management agencies, resilience consultants and funders who want a clearer way to rank mitigation projects. A pilot uses your project list and your rules.</p>
+    <div id="contactLine" style="font-size:18px;font-weight:600"></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <p><b>CivicSignal</b> · Hazard-mitigation decision support</p>
+  <p>Data notes: county scores in the explorer come from the project's Illinois dataset and are shown for demonstration. Verify local data before operational use. Example projects use sample values.</p>
+</div></footer>
+<div class="tt" id="tt" hidden></div>
+
+<script>
+const DATA = {"vb":[600,1080],"counties":[{"n":"Adams","r":"West Central","svi":0.52,"h":{"Flood":3.8,"Tornado":3.0,"Earthquake":1.0,"Severe Storm":3.0,"Winter Storm":2.8,"Drought":2.8},"d":"M1.2,449.9L89.8,451.3L89.2,536.2L22.2,535.9L22.7,530.5L21.6,527.7L13.5,521.1L11.7,519.2L9.8,512.7L10.5,509.6L13.9,505.3L13.9,502.6L7.3,492.2L2.8,481.8L3.6,477.7L0.3,461.9L1.0,457.7L0.0,454.0L1.2,449.9Z"},{"n":"Alexander","r":"South","svi":0.98,"h":{"Flood":4.5,"Tornado":2.8,"Earthquake":4.5,"Severe Storm":3.0,"Winter Storm":1.5,"Drought":2.0},"d":"M302.7,1008.5L338.2,1008.3L342.0,1009.0L344.4,1010.9L345.0,1017.3L338.6,1022.3L337.0,1029.3L336.3,1028.6L335.4,1029.6L336.7,1032.8L336.1,1034.3L337.7,1035.4L337.7,1036.8L335.5,1038.4L336.3,1041.2L335.1,1042.3L337.0,1042.3L336.8,1045.3L334.5,1048.9L337.5,1054.3L338.9,1054.0L340.6,1056.1L345.7,1056.3L348.5,1060.2L349.5,1060.1L348.1,1066.2L349.3,1071.3L355.5,1077.0L350.2,1079.5L346.5,1078.0L345.4,1070.7L340.0,1065.9L337.2,1059.6L336.4,1061.1L329.3,1060.1L329.1,1061.3L329.8,1064.4L334.0,1066.8L336.7,1069.9L335.9,1074.0L333.4,1076.1L330.9,1075.0L327.3,1070.7L318.7,1065.8L317.8,1062.6L319.2,1058.1L318.8,1055.2L311.6,1046.4L306.5,1035.3L305.5,1030.8L306.9,1025.4L305.3,1024.4L300.7,1024.6L300.7,1022.7L298.0,1018.3L298.9,1013.1L302.7,1008.5Z"},{"n":"Bond","r":"Southwest","svi":0.62,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":2.2,"Severe Storm":3.2,"Winter Storm":2.2,"Drought":2.8},"d":"M337.9,678.3L338.0,684.0L336.9,684.0L337.4,734.1L289.5,734.0L286.1,733.9L285.8,708.3L280.2,708.4L279.9,684.0L287.8,684.0L287.8,678.3L337.9,678.3Z"},{"n":"Boone","r":"Northern","svi":0.35,"h":{"Flood":2.0,"Tornado":2.0,"Earthquake":0.5,"Severe Storm":2.5,"Winter Storm":3.8,"Drought":2.0},"d":"M419.0,2.9L419.3,69.2L390.2,69.3L384.3,69.4L384.2,2.6L419.0,2.9Z"},{"n":"Brown","r":"West Central","svi":0.62,"h":{"Flood":3.2,"Tornado":3.0,"Earthquake":1.0,"Severe Storm":3.0,"Winter Storm":2.8,"Drought":2.8},"d":"M132.7,483.8L134.7,482.5L135.5,483.7L133.6,485.8L136.1,488.2L135.4,492.5L145.0,492.7L149.3,491.3L149.7,495.3L146.5,499.5L144.8,506.1L140.1,510.0L138.6,513.5L139.1,517.8L140.6,520.3L89.1,519.2L89.6,468.6L122.1,468.7L120.1,471.3L122.1,473.4L125.6,473.2L125.2,479.9L127.2,479.8L128.6,481.1L128.4,482.4L132.7,483.8Z"},{"n":"Bureau","r":"Northwest","svi":0.48,"h":{"Flood":3.0,"Tornado":2.8,"Earthquake":0.8,"Severe Storm":2.8,"Winter Storm":3.2,"Drought":2.8},"d":"M281.0,180.0L350.4,179.9L350.9,233.6L341.7,233.0L336.5,231.1L330.5,233.9L324.4,236.2L324.9,239.3L322.1,248.6L305.7,248.4L305.7,265.1L279.9,265.1L280.0,248.4L247.2,248.3L247.3,193.0L246.5,180.2L281.0,180.0Z"},{"n":"Calhoun","r":"West Central","svi":0.65,"h":{"Flood":4.0,"Tornado":2.8,"Earthquake":1.0,"Severe Storm":2.8,"Winter Storm":2.5,"Drought":2.5},"d":"M86.1,606.0L134.4,606.7L133.1,612.7L136.1,627.1L135.0,633.4L136.7,636.6L137.7,645.1L134.6,651.2L134.2,655.8L139.2,671.0L137.9,674.2L140.1,677.6L140.3,683.6L145.5,691.4L147.7,692.8L153.2,690.1L158.6,690.1L155.5,691.8L153.1,698.5L150.2,702.8L142.2,709.3L138.7,709.3L132.9,705.8L127.0,698.1L125.0,691.0L124.7,685.3L119.5,673.8L124.1,666.5L124.3,664.3L120.2,654.2L117.2,634.3L113.7,632.1L107.4,623.4L99.6,616.6L92.4,612.1L90.8,609.8L87.4,608.4L86.1,606.0Z"},{"n":"Carroll","r":"Northern","svi":0.48,"h":{"Flood":3.0,"Tornado":2.2,"Earthquake":0.5,"Severe Storm":2.5,"Winter Storm":3.5,"Drought":2.2},"d":"M238.0,60.7L272.6,60.2L272.9,112.6L203.3,112.9L201.5,109.7L201.6,107.3L205.2,98.8L203.5,92.9L201.3,90.3L200.9,84.4L201.9,77.5L200.4,74.7L197.8,74.7L195.6,72.8L194.0,68.7L178.6,61.3L238.0,60.7Z"},{"n":"Cass","r":"Central","svi":0.6,"h":{"Flood":3.2,"Tornado":3.2,"Earthquake":1.2,"Severe Storm":3.0,"Winter Storm":2.5,"Drought":3.0},"d":"M176.9,465.3L179.1,466.4L181.2,472.6L180.4,473.8L182.7,475.4L182.0,476.5L183.2,476.6L183.2,478.2L185.1,478.3L186.1,476.8L188.2,477.9L191.7,477.6L192.0,479.0L195.1,477.2L195.4,478.7L196.8,478.7L197.8,476.1L200.7,477.3L203.6,475.7L205.9,476.8L207.0,473.9L208.8,473.1L211.0,473.8L212.9,473.5L212.7,472.4L214.0,473.2L215.3,470.6L216.3,470.8L216.4,469.2L218.2,469.9L219.6,467.6L220.2,469.0L221.3,467.2L221.2,468.5L224.1,469.4L225.4,467.5L226.0,469.0L226.6,467.0L226.8,513.7L139.3,513.0L140.0,510.1L143.2,508.2L145.6,505.0L146.5,499.5L149.7,495.2L149.6,490.2L161.0,484.7L162.0,477.2L167.2,473.6L167.3,471.0L170.2,465.1L172.2,464.5L174.9,466.2L176.9,465.3Z"},{"n":"Champaign","r":"East Central","svi":0.42,"h":{"Flood":2.5,"Tornado":3.5,"Earthquake":1.2,"Severe Storm":3.2,"Winter Storm":2.5,"Drought":3.5},"d":"M455.9,411.3L534.8,411.1L535.3,445.0L533.3,445.0L533.9,512.3L520.4,512.4L455.6,512.5L455.9,411.3Z"},{"n":"Christian","r":"Central","svi":0.55,"h":{"Flood":2.8,"Tornado":3.5,"Earthquake":1.2,"Severe Storm":3.2,"Winter Storm":2.5,"Drought":3.2},"d":"M342.8,525.3L347.4,524.5L354.1,527.7L354.5,556.1L371.5,556.3L371.5,616.4L296.1,615.9L295.4,558.9L303.9,558.9L303.8,550.5L311.9,550.5L311.8,535.4L313.0,536.0L313.4,538.7L316.4,539.1L319.4,536.0L321.1,536.5L322.3,533.4L326.0,535.1L327.2,533.3L330.1,532.6L331.7,529.3L336.5,526.8L338.2,522.9L340.0,523.6L340.4,525.4L342.8,525.3Z"},{"n":"Clark","r":"East Central","svi":0.6,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":2.0,"Severe Storm":3.2,"Winter Storm":2.5,"Drought":3.0},"d":"M530.6,590.0L571.3,588.8L571.0,590.9L594.5,590.8L594.6,616.0L592.9,615.0L591.1,617.5L587.1,617.7L583.4,623.3L581.2,624.4L584.6,625.5L582.8,628.5L584.2,630.5L583.5,632.8L585.3,635.7L586.5,634.6L588.6,634.5L587.4,636.5L588.0,642.3L583.3,647.8L581.4,647.6L581.2,650.8L578.3,651.4L578.1,652.6L580.1,653.1L575.8,653.1L575.9,650.3L562.4,650.2L562.6,648.9L523.5,650.0L522.5,590.1L530.6,590.0Z"},{"n":"Clay","r":"East Central","svi":0.65,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":2.2,"Severe Storm":3.2,"Winter Storm":2.2,"Drought":2.8},"d":"M421.1,700.5L470.6,701.2L470.6,712.7L486.0,713.6L486.1,736.3L481.8,736.9L482.6,738.3L481.8,738.9L482.5,739.1L482.1,745.9L483.9,749.2L483.8,750.8L480.2,755.1L481.5,756.0L481.0,756.7L482.7,757.0L481.8,757.9L482.5,758.5L484.1,758.0L484.1,759.5L487.0,760.8L487.4,761.5L486.7,761.9L420.4,760.6L421.1,700.5Z"},{"n":"Clinton","r":"Southwest","svi":0.5,"h":{"Flood":2.8,"Tornado":3.0,"Earthquake":2.5,"Severe Storm":3.2,"Winter Storm":2.0,"Drought":2.5},"d":"M286.1,733.9L338.0,734.1L354.6,735.2L353.8,780.7L335.9,779.3L334.6,780.5L332.8,779.4L331.4,780.4L328.9,778.9L323.8,779.4L322.8,777.6L321.5,778.1L321.7,779.6L320.6,779.7L321.4,780.1L320.3,781.2L315.9,782.3L316.2,783.2L315.5,783.4L314.7,782.1L314.0,783.8L311.3,781.5L310.5,783.1L308.4,783.4L307.4,785.2L303.4,787.4L302.1,785.7L302.0,786.8L294.9,785.0L294.5,786.4L291.9,786.2L290.5,786.0L290.9,784.6L289.6,785.6L289.1,784.5L287.4,786.0L283.6,786.6L282.4,788.8L281.4,788.5L281.4,791.0L278.9,791.5L279.0,792.6L276.1,792.0L275.7,794.6L274.7,794.0L274.2,795.9L272.7,795.0L271.3,795.9L271.6,797.5L270.1,797.2L269.7,751.1L286.4,750.9L286.1,733.9Z"},{"n":"Coles","r":"East Central","svi":0.52,"h":{"Flood":2.5,"Tornado":3.2,"Earthquake":1.8,"Severe Storm":3.2,"Winter Storm":2.5,"Drought":3.0},"d":"M454.1,556.8L515.2,556.7L515.3,551.1L529.7,550.2L530.6,590.0L522.5,590.1L522.6,601.6L522.8,610.0L454.3,610.9L454.1,556.8Z"},{"n":"Cook","r":"Northeast","svi":0.5,"h":{"Flood":2.5,"Tornado":2.0,"Earthquake":0.5,"Severe Storm":2.8,"Winter Storm":3.5,"Drought":1.8},"d":"M489.0,69.0L560.6,69.4L565.5,77.9L572.4,83.8L571.6,84.5L574.0,87.5L573.9,89.1L573.2,87.5L573.4,89.8L576.1,97.8L576.2,101.3L577.9,105.1L579.6,105.9L578.1,106.6L579.4,110.3L578.1,109.2L579.3,110.5L580.3,115.4L581.3,115.8L580.8,117.8L582.3,119.9L584.6,120.1L582.3,120.4L581.9,121.7L581.9,124.6L583.5,125.1L583.4,127.7L582.8,125.2L582.4,127.2L583.6,131.5L587.1,137.1L588.1,138.8L587.9,140.3L586.7,140.1L586.8,141.6L587.8,140.4L588.9,141.7L587.6,142.7L588.5,142.1L590.7,145.3L592.8,145.9L592.7,147.2L594.7,148.2L594.9,149.5L593.3,149.7L594.8,149.7L595.0,151.0L593.5,151.0L593.0,152.2L594.8,151.3L595.6,152.9L595.5,202.4L556.0,202.4L555.6,185.1L538.1,185.5L537.7,168.5L520.5,169.0L520.3,160.4L529.6,160.2L537.4,154.3L536.5,100.3L485.4,101.7L485.3,86.0L489.1,86.0L489.0,69.0Z"},{"n":"Crawford","r":"East Central","svi":0.7,"h":{"Flood":3.0,"Tornado":3.0,"Earthquake":2.5,"Severe Storm":3.0,"Winter Storm":2.2,"Drought":2.8},"d":"M532.0,649.7L562.6,648.9L562.4,650.2L575.9,650.3L575.8,653.1L580.2,653.4L578.0,653.2L575.6,657.1L579.5,660.6L576.8,661.1L576.3,662.8L582.2,663.8L581.3,667.0L584.8,668.2L588.6,673.0L587.3,675.9L588.9,679.9L587.5,683.8L590.2,685.4L587.6,685.8L594.7,689.2L597.4,692.6L596.0,695.3L596.5,698.7L595.1,699.6L595.2,701.9L596.7,702.6L594.3,703.1L593.9,705.8L593.5,704.2L592.7,704.3L594.1,707.3L592.2,708.1L592.8,710.3L591.3,710.5L594.7,712.6L532.7,713.1L532.0,649.7Z"},{"n":"Cumberland","r":"East Central","svi":0.6,"h":{"Flood":2.5,"Tornado":3.2,"Earthquake":2.0,"Severe Storm":3.2,"Winter Storm":2.2,"Drought":2.8},"d":"M454.3,610.9L522.8,610.0L523.5,650.0L504.4,650.4L454.3,650.4L454.3,610.9Z"},{"n":"De Witt","r":"Central","svi":0.45,"h":{"Flood":2.5,"Tornado":3.8,"Earthquake":1.0,"Severe Storm":3.2,"Winter Storm":2.8,"Drought":3.5},"d":"M353.1,433.9L438.8,434.0L421.9,461.2L421.9,469.7L413.3,469.7L413.3,475.4L413.4,478.2L353.7,479.4L353.1,433.9Z"},{"n":"DeKalb","r":"Northern","svi":0.35,"h":{"Flood":2.0,"Tornado":2.2,"Earthquake":0.5,"Severe Storm":2.5,"Winter Storm":3.5,"Drought":2.2},"d":"M419.3,69.2L436.7,69.1L436.8,86.1L434.7,86.1L434.7,170.9L399.5,171.0L384.4,171.5L384.3,69.4L419.3,69.2Z"},{"n":"Douglas","r":"East Central","svi":0.45,"h":{"Flood":2.5,"Tornado":3.5,"Earthquake":1.2,"Severe Storm":3.2,"Winter Storm":2.5,"Drought":3.5},"d":"M455.6,512.5L533.9,512.3L534.1,529.4L529.3,529.4L529.7,550.2L524.1,550.2L515.3,551.1L515.2,556.7L454.1,556.8L454.0,529.5L455.7,529.5L455.6,512.5Z"},{"n":"DuPage","r":"Northeast","svi":0.08,"h":{"Flood":2.0,"Tornado":2.0,"Earthquake":0.5,"Severe Storm":2.5,"Winter Storm":3.5,"Drought":1.8},"d":"M485.4,101.7L536.5,100.3L537.4,154.3L533.4,156.9L529.6,160.2L520.3,160.4L520.1,151.9L485.6,152.8L485.4,101.7Z"},{"n":"Edgar","r":"East Central","svi":0.55,"h":{"Flood":2.5,"Tornado":3.2,"Earthquake":1.8,"Severe Storm":3.2,"Winter Storm":2.5,"Drought":3.0},"d":"M533.9,512.3L582.1,512.0L581.8,514.6L587.5,514.6L590.6,514.5L587.1,511.9L594.3,511.8L594.4,551.4L594.5,590.8L571.0,590.9L571.3,588.8L530.6,590.0L529.3,529.4L534.1,529.4L533.9,512.3Z"},{"n":"Edwards","r":"South","svi":0.72,"h":{"Flood":2.8,"Tornado":3.0,"Earthquake":3.5,"Severe Storm":3.0,"Winter Storm":2.0,"Drought":2.5},"d":"M502.6,767.9L531.4,767.6L530.8,769.3L531.7,770.2L531.7,772.9L533.0,773.3L534.0,775.8L531.3,778.5L532.4,778.5L531.6,779.2L532.4,780.2L531.5,780.6L531.2,783.2L533.0,787.7L532.4,788.3L533.3,788.6L532.5,789.4L533.1,789.7L532.3,790.3L533.1,791.2L531.7,794.6L532.4,795.1L531.3,795.9L531.8,797.3L530.7,796.9L528.2,800.7L529.8,802.1L528.0,805.1L531.5,812.7L530.9,816.4L532.6,816.6L532.6,818.6L531.0,819.2L531.9,822.2L527.9,823.7L528.6,825.3L526.4,825.4L526.1,828.1L502.1,828.8L502.6,767.9Z"},{"n":"Effingham","r":"South","svi":0.55,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":2.5,"Severe Storm":3.2,"Winter Storm":2.2,"Drought":2.8},"d":"M404.4,641.7L454.3,642.0L454.3,650.4L470.8,650.5L470.6,701.2L456.4,700.9L404.2,701.1L404.4,641.7Z"},{"n":"Fayette","r":"East Central","svi":0.65,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":2.0,"Severe Storm":3.2,"Winter Storm":2.2,"Drought":2.8},"d":"M354.5,641.4L404.4,641.6L404.2,701.1L421.1,700.5L420.8,717.7L392.9,718.1L354.7,718.1L354.6,735.2L337.4,734.1L336.9,684.0L338.0,684.0L337.9,641.5L354.5,641.4Z"},{"n":"Ford","r":"Central","svi":0.4,"h":{"Flood":2.0,"Tornado":3.5,"Earthquake":0.8,"Severe Storm":3.2,"Winter Storm":2.8,"Drought":3.8},"d":"M504.9,294.4L507.0,393.8L534.3,394.2L534.8,411.1L481.2,411.2L455.9,411.3L456.0,368.6L489.5,368.5L487.7,295.1L504.9,294.4Z"},{"n":"Franklin","r":"South","svi":0.8,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":3.5,"Severe Storm":3.2,"Winter Storm":2.0,"Drought":2.5},"d":"M356.0,854.4L419.4,854.4L419.1,905.4L352.8,905.7L352.8,888.5L348.7,888.1L351.1,887.0L354.4,879.6L353.6,877.0L355.0,875.2L353.4,872.6L354.6,871.3L354.6,869.5L355.7,869.6L355.5,868.1L356.4,868.4L357.8,866.4L356.9,866.4L357.5,865.7L356.8,865.0L357.6,865.1L357.0,862.6L358.1,862.1L358.1,860.4L354.8,858.4L355.7,858.6L356.0,854.4Z"},{"n":"Fulton","r":"West Central","svi":0.62,"h":{"Flood":3.0,"Tornado":3.2,"Earthquake":1.0,"Severe Storm":3.0,"Winter Storm":2.8,"Drought":3.0},"d":"M228.1,350.1L227.6,366.9L244.8,367.2L245.0,388.9L243.4,390.8L242.7,396.5L239.2,402.7L232.9,406.8L228.3,412.5L220.7,415.4L219.5,416.9L218.1,421.1L218.4,424.0L215.8,427.4L215.7,431.1L213.8,434.1L210.0,438.0L207.3,444.4L201.1,447.0L199.5,450.2L196.2,453.1L158.5,452.1L159.7,349.6L228.1,350.1Z"},{"n":"Gallatin","r":"South","svi":0.87,"h":{"Flood":3.5,"Tornado":3.0,"Earthquake":4.2,"Severe Storm":3.0,"Winter Storm":1.8,"Drought":2.2},"d":"M468.7,896.6L504.3,896.7L504.3,895.1L507.5,897.0L509.9,900.2L512.5,901.7L515.1,907.6L520.7,911.0L520.3,912.4L518.3,913.5L512.7,911.7L510.9,913.4L514.4,917.6L518.7,915.9L520.3,916.7L516.6,927.5L514.2,930.4L506.4,935.3L500.8,944.6L501.2,950.4L504.7,961.7L501.8,961.8L497.9,956.9L468.6,956.8L468.7,896.6Z"},{"n":"Greene","r":"West Central","svi":0.65,"h":{"Flood":3.5,"Tornado":3.0,"Earthquake":1.2,"Severe Storm":3.0,"Winter Storm":2.5,"Drought":2.8},"d":"M180.9,582.4L203.1,582.4L203.9,632.9L195.6,633.5L195.7,639.9L179.1,640.0L179.2,649.9L153.7,649.7L153.2,652.0L151.9,652.5L150.9,651.8L150.2,647.7L147.3,646.3L146.5,647.3L145.8,646.2L144.9,648.1L144.5,646.8L141.8,647.9L141.5,646.1L141.1,649.0L139.3,647.8L140.1,651.3L138.6,652.4L139.0,655.8L136.8,657.1L135.9,660.9L134.2,655.9L134.6,651.3L137.7,645.1L136.7,636.6L135.0,633.4L136.1,627.1L133.1,612.5L134.4,606.6L133.9,601.0L134.9,594.4L137.5,589.1L139.2,582.2L180.9,582.4Z"},{"n":"Grundy","r":"Northeast","svi":0.38,"h":{"Flood":3.0,"Tornado":2.5,"Earthquake":0.5,"Severe Storm":2.8,"Winter Storm":3.0,"Drought":2.5},"d":"M487.0,203.8L488.7,271.7L437.1,272.9L436.8,241.8L435.6,204.9L487.0,203.8Z"},{"n":"Hamilton","r":"South","svi":0.85,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":4.0,"Severe Storm":3.2,"Winter Storm":2.0,"Drought":2.5},"d":"M419.7,828.7L469.3,829.0L468.7,893.9L468.7,896.6L419.1,896.9L419.7,828.7Z"},{"n":"Hancock","r":"West Central","svi":0.6,"h":{"Flood":3.5,"Tornado":3.0,"Earthquake":1.0,"Severe Storm":3.0,"Winter Storm":2.8,"Drought":2.8},"d":"M49.1,364.6L73.4,365.2L91.0,364.3L89.8,451.3L1.2,449.9L1.0,442.7L3.4,438.5L3.1,434.6L7.3,422.9L10.1,418.3L14.5,414.7L18.7,413.9L21.0,410.9L19.7,402.1L22.3,391.7L19.5,385.7L16.2,383.7L16.4,380.3L19.9,377.0L23.8,370.6L30.5,367.1L39.3,364.6L49.1,364.6Z"},{"n":"Hardin","r":"South","svi":0.95,"h":{"Flood":3.5,"Tornado":2.8,"Earthquake":4.5,"Severe Storm":3.0,"Winter Storm":1.8,"Drought":2.0},"d":"M468.6,956.8L497.9,956.9L501.5,961.6L506.2,962.8L511.2,969.2L514.3,971.3L515.5,975.3L514.9,978.4L512.4,981.5L511.1,981.6L482.7,985.4L478.0,987.7L472.2,993.9L469.2,995.2L465.8,991.8L462.6,991.0L463.0,956.8L468.6,956.8Z"},{"n":"Henderson","r":"West Central","svi":0.62,"h":{"Flood":3.5,"Tornado":2.8,"Earthquake":1.0,"Severe Storm":2.8,"Winter Storm":2.8,"Drought":2.8},"d":"M108.7,280.5L108.1,365.0L49.1,364.6L58.6,358.0L60.1,352.3L59.6,346.4L63.0,336.9L62.1,331.3L63.1,328.4L68.1,323.7L70.2,319.4L73.5,316.6L75.4,313.2L82.0,308.7L83.8,302.7L82.8,298.1L84.9,291.6L84.5,280.3L108.7,280.5Z"},{"n":"Henry","r":"Northwest","svi":0.45,"h":{"Flood":2.8,"Tornado":2.8,"Earthquake":0.8,"Severe Storm":2.8,"Winter Storm":3.2,"Drought":2.8},"d":"M246.5,180.2L247.3,193.0L247.2,248.3L245.7,248.3L245.6,264.9L160.7,264.5L161.5,205.0L169.7,200.8L171.3,196.4L173.3,194.8L178.8,194.8L180.5,193.2L185.9,192.2L190.0,191.7L193.3,189.2L196.9,188.5L199.2,182.5L198.3,180.1L246.5,180.2Z"},{"n":"Iroquois","r":"Central","svi":0.45,"h":{"Flood":2.5,"Tornado":3.5,"Earthquake":0.8,"Severe Storm":3.2,"Winter Storm":2.8,"Drought":3.8},"d":"M595.4,292.0L595.4,393.2L507.0,393.8L504.9,294.4L595.4,292.0Z"},{"n":"Jackson","r":"South","svi":0.62,"h":{"Flood":3.2,"Tornado":3.0,"Earthquake":3.5,"Severe Storm":3.2,"Winter Storm":2.0,"Drought":2.5},"d":"M348.8,888.5L352.8,888.5L352.4,956.7L307.6,956.7L308.4,957.1L307.6,960.8L305.2,964.0L300.4,962.5L300.2,961.0L297.5,962.2L298.1,959.8L302.6,960.5L304.2,958.2L298.1,949.1L298.4,939.0L296.4,937.3L285.1,933.5L276.8,927.9L275.5,925.7L276.3,923.6L276.7,920.4L273.6,913.4L276.1,912.1L277.3,906.3L286.5,887.5L348.8,888.5Z"},{"n":"Jasper","r":"East Central","svi":0.62,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":2.2,"Severe Storm":3.2,"Winter Storm":2.2,"Drought":2.8},"d":"M523.5,650.0L532.0,649.7L532.7,713.1L499.4,713.7L470.6,712.7L470.6,704.1L470.8,650.5L523.5,650.0Z"},{"n":"Jefferson","r":"South","svi":0.65,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":3.5,"Severe Storm":3.2,"Winter Storm":2.0,"Drought":2.5},"d":"M353.7,786.4L420.3,786.2L419.4,854.4L402.8,854.1L353.0,854.4L353.7,786.4Z"},{"n":"Jersey","r":"West Central","svi":0.52,"h":{"Flood":3.8,"Tornado":3.0,"Earthquake":1.2,"Severe Storm":3.0,"Winter Storm":2.5,"Drought":2.5},"d":"M148.0,647.3L150.8,648.4L150.9,651.8L151.9,652.5L153.2,652.0L153.7,649.7L179.2,649.9L179.1,640.0L195.7,639.9L195.6,633.5L203.9,632.9L204.2,684.0L185.1,684.0L184.8,698.8L179.9,698.7L167.4,691.8L160.3,690.2L153.4,690.1L147.7,692.8L145.5,691.4L140.8,685.0L140.1,677.6L137.9,674.2L139.2,671.5L138.6,670.0L135.9,660.9L136.8,657.1L139.0,655.8L138.6,652.4L140.1,651.3L139.3,647.8L141.1,649.0L141.5,646.1L141.8,647.9L144.5,646.8L144.9,648.1L145.8,646.2L148.0,647.3Z"},{"n":"Jo Daviess","r":"Northern","svi":0.4,"h":{"Flood":3.0,"Tornado":2.0,"Earthquake":0.5,"Severe Storm":2.5,"Winter Storm":3.8,"Drought":2.0},"d":"M236.9,0.5L238.0,60.7L178.6,61.3L176.7,59.7L172.9,59.0L169.4,56.6L163.3,49.3L161.6,44.3L163.8,35.9L156.7,27.2L154.8,24.3L143.2,18.1L141.0,13.1L134.4,10.7L129.4,7.1L128.0,3.6L130.2,0.1L236.9,0.5Z"},{"n":"Johnson","r":"South","svi":0.89,"h":{"Flood":2.8,"Tornado":3.0,"Earthquake":4.2,"Severe Storm":3.0,"Winter Storm":1.8,"Drought":2.2},"d":"M369.1,957.4L418.8,956.9L418.5,1008.0L389.5,1008.2L390.8,1009.3L390.6,1011.8L386.2,1014.6L381.9,1015.7L380.6,1014.8L374.7,1013.0L368.6,1016.4L369.1,957.4Z"},{"n":"Kane","r":"Northeast","svi":0.35,"h":{"Flood":2.5,"Tornado":2.2,"Earthquake":0.5,"Severe Storm":2.5,"Winter Storm":3.5,"Drought":2.0},"d":"M436.7,69.1L489.0,69.0L489.1,86.0L485.3,86.0L485.6,152.8L450.0,153.5L434.7,153.7L434.7,86.1L436.8,86.1L436.7,69.1Z"},{"n":"Kankakee","r":"Northeast","svi":0.58,"h":{"Flood":3.0,"Tornado":2.8,"Earthquake":0.5,"Severe Storm":2.8,"Winter Storm":3.0,"Drought":2.5},"d":"M595.3,235.9L595.4,292.0L487.7,295.1L487.0,271.7L488.7,271.7L488.5,266.1L488.2,254.7L522.9,253.9L522.6,237.0L595.3,235.9Z"},{"n":"Kendall","r":"Northeast","svi":0.12,"h":{"Flood":2.2,"Tornado":2.2,"Earthquake":0.5,"Severe Storm":2.5,"Winter Storm":3.2,"Drought":2.0},"d":"M434.7,153.7L485.6,152.8L487.0,203.8L478.3,204.1L435.6,204.9L434.7,153.7Z"},{"n":"Knox","r":"West Central","svi":0.55,"h":{"Flood":2.8,"Tornado":3.0,"Earthquake":1.0,"Severe Storm":3.0,"Winter Storm":3.0,"Drought":3.0},"d":"M228.2,264.9L228.1,350.1L171.2,349.7L159.7,349.6L160.7,264.5L228.2,264.9Z"},{"n":"LaSalle","r":"Central","svi":0.5,"h":{"Flood":3.0,"Tornado":3.0,"Earthquake":0.8,"Severe Storm":3.0,"Winter Storm":3.0,"Drought":2.8},"d":"M384.4,171.5L434.7,170.9L437.1,261.6L437.1,272.9L385.6,273.4L385.6,282.4L385.5,308.1L368.2,308.5L368.1,273.6L351.1,273.7L350.3,171.5L384.4,171.5Z"},{"n":"Lake","r":"Northeast","svi":0.22,"h":{"Flood":2.0,"Tornado":1.8,"Earthquake":0.5,"Severe Storm":2.5,"Winter Storm":4.0,"Drought":1.5},"d":"M494.8,69.0L494.8,2.6L554.1,3.1L554.9,7.9L553.7,24.2L552.4,24.7L553.4,24.5L552.3,28.7L550.7,27.9L549.6,38.9L550.2,46.5L552.9,54.9L560.6,69.4L494.8,69.0Z"},{"n":"Lawrence","r":"East Central","svi":0.75,"h":{"Flood":3.2,"Tornado":3.0,"Earthquake":3.0,"Severe Storm":3.0,"Winter Storm":2.0,"Drought":2.5},"d":"M538.4,713.1L594.8,712.6L596.1,717.3L595.2,719.3L600.0,726.1L599.2,727.7L597.1,728.4L599.7,729.2L598.6,732.9L599.9,734.4L598.3,735.5L596.9,738.9L596.4,742.8L594.1,745.9L584.5,749.4L583.6,752.6L581.3,754.3L582.0,756.9L580.3,760.5L580.7,762.3L582.5,762.9L582.6,763.9L580.9,764.5L578.8,763.2L578.6,766.5L576.7,768.0L537.7,767.7L538.4,713.1Z"},{"n":"Lee","r":"Northern","svi":0.45,"h":{"Flood":2.5,"Tornado":2.5,"Earthquake":0.5,"Severe Storm":2.5,"Winter Storm":3.5,"Drought":2.5},"d":"M281.5,118.3L303.4,118.2L305.9,116.1L312.1,117.2L312.8,118.5L311.3,119.6L313.7,121.3L314.0,119.6L315.9,118.0L321.5,118.0L321.5,120.9L384.1,120.2L384.3,161.2L384.4,171.5L350.4,171.5L350.4,179.9L281.0,180.0L281.5,118.3Z"},{"n":"Livingston","r":"Central","svi":0.42,"h":{"Flood":2.2,"Tornado":3.5,"Earthquake":0.8,"Severe Storm":3.2,"Winter Storm":2.8,"Drought":3.8},"d":"M487.0,271.7L489.5,368.5L438.9,368.7L438.7,358.2L437.7,358.2L437.4,341.3L385.8,342.1L385.8,339.2L385.6,273.4L487.0,271.7Z"},{"n":"Logan","r":"Central","svi":0.45,"h":{"Flood":2.5,"Tornado":3.8,"Earthquake":1.0,"Severe Storm":3.2,"Winter Storm":2.5,"Drought":3.5},"d":"M285.3,426.5L335.9,425.5L336.1,434.2L353.1,433.9L353.7,482.2L353.9,505.0L314.8,504.8L314.8,502.0L303.2,501.9L303.0,493.5L289.0,493.6L288.9,470.9L285.6,471.0L285.3,426.5Z"},{"n":"Macon","r":"Central","svi":0.5,"h":{"Flood":2.8,"Tornado":3.8,"Earthquake":1.2,"Severe Storm":3.2,"Winter Storm":2.5,"Drought":3.2},"d":"M353.7,479.4L413.4,478.2L413.3,529.5L411.4,529.5L411.5,539.6L403.3,539.5L403.6,556.5L354.5,556.1L354.3,536.2L354.1,527.7L347.4,524.5L342.8,525.3L342.8,505.1L353.9,505.0L353.7,479.4Z"},{"n":"Macoupin","r":"Southwest","svi":0.58,"h":{"Flood":3.0,"Tornado":3.2,"Earthquake":2.0,"Severe Storm":3.2,"Winter Storm":2.2,"Drought":2.8},"d":"M237.1,582.0L270.5,581.8L271.0,684.0L263.3,684.1L204.2,684.0L203.1,582.4L237.1,582.0Z"},{"n":"Madison","r":"Southwest","svi":0.48,"h":{"Flood":3.2,"Tornado":3.0,"Earthquake":2.5,"Severe Storm":3.2,"Winter Storm":2.0,"Drought":2.5},"d":"M279.9,684.0L280.2,708.4L285.8,708.3L286.4,750.9L198.8,750.1L197.8,746.6L194.6,741.6L194.6,737.3L199.2,732.6L201.3,728.0L207.4,723.5L208.8,720.4L209.7,715.3L208.9,713.1L196.4,705.7L191.8,701.4L184.8,698.8L185.1,684.0L279.9,684.0Z"},{"n":"Marion","r":"South","svi":0.68,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":3.2,"Severe Storm":3.2,"Winter Storm":2.0,"Drought":2.5},"d":"M354.6,735.2L354.7,718.1L420.8,717.7L420.3,783.3L420.3,786.2L353.7,786.4L354.6,735.2Z"},{"n":"Marshall","r":"Northwest","svi":0.55,"h":{"Flood":2.8,"Tornado":3.0,"Earthquake":0.8,"Severe Storm":2.8,"Winter Storm":3.0,"Drought":2.8},"d":"M279.9,265.1L326.2,265.2L325.1,271.2L321.8,273.8L368.1,273.6L368.2,308.5L325.6,309.0L304.7,309.4L307.4,306.4L308.4,299.2L280.0,299.1L279.9,265.1Z"},{"n":"Mason","r":"Central","svi":0.6,"h":{"Flood":3.2,"Tornado":3.2,"Earthquake":1.2,"Severe Storm":3.0,"Winter Storm":2.5,"Drought":3.2},"d":"M235.6,404.8L268.2,404.0L268.6,426.7L285.3,426.5L285.4,465.1L280.6,459.0L275.6,457.6L275.1,458.9L272.9,458.9L271.6,461.5L269.4,460.2L267.9,461.6L266.6,461.2L265.7,463.1L263.4,464.2L259.7,463.2L254.4,465.3L251.1,464.8L250.0,463.4L246.2,464.0L245.0,462.1L243.1,462.6L243.1,464.0L236.9,461.6L234.0,463.5L231.0,461.0L229.8,462.5L229.9,464.1L228.0,463.8L227.7,466.0L228.6,466.7L226.9,467.9L226.2,466.7L226.0,469.0L225.5,467.5L224.1,469.4L221.2,468.5L221.3,467.2L220.2,469.0L219.7,467.6L218.2,469.9L216.4,469.2L215.6,471.4L213.8,472.2L213.9,473.2L212.6,472.4L212.9,473.4L211.8,473.9L211.8,472.9L207.0,473.9L205.9,476.8L203.6,475.7L202.6,477.1L199.8,477.2L198.5,476.8L198.7,475.9L196.8,478.7L195.4,478.7L195.1,477.2L192.0,479.0L191.7,477.6L188.2,477.9L187.0,476.8L185.7,476.9L185.1,478.3L183.2,478.2L183.2,476.6L182.0,476.5L182.7,475.4L180.4,473.8L181.2,472.6L179.1,466.4L175.8,465.0L174.0,466.0L172.9,464.7L176.2,462.1L179.8,461.7L185.8,458.8L192.2,459.7L195.1,458.7L196.8,451.7L199.1,450.6L202.4,446.1L207.3,444.4L210.0,438.0L215.4,431.8L215.7,427.7L218.2,424.7L218.1,421.1L219.6,416.7L228.4,412.4L235.6,404.8Z"},{"n":"Massac","r":"South","svi":0.82,"h":{"Flood":3.5,"Tornado":2.8,"Earthquake":4.5,"Severe Storm":3.0,"Winter Storm":1.5,"Drought":2.0},"d":"M385.9,1014.6L390.6,1011.8L390.8,1009.3L389.5,1008.2L418.5,1008.0L451.4,1042.6L451.4,1060.3L446.4,1060.9L440.1,1059.0L437.3,1054.8L431.4,1050.5L421.2,1046.2L415.5,1045.7L404.9,1037.1L386.1,1029.5L385.9,1014.6Z"},{"n":"McDonough","r":"West Central","svi":0.5,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":1.0,"Severe Storm":3.0,"Winter Storm":2.8,"Drought":3.0},"d":"M108.1,365.0L159.5,366.6L158.8,435.1L127.6,434.6L90.2,433.5L91.0,364.3L108.1,365.0Z"},{"n":"McHenry","r":"Northeast","svi":0.15,"h":{"Flood":2.0,"Tornado":2.0,"Earthquake":0.5,"Severe Storm":2.5,"Winter Storm":4.0,"Drought":1.8},"d":"M419.0,2.9L494.8,2.6L494.8,69.0L439.6,69.1L419.3,69.2L419.0,2.9Z"},{"n":"McLean","r":"Central","svi":0.35,"h":{"Flood":2.5,"Tornado":3.8,"Earthquake":1.0,"Severe Storm":3.2,"Winter Storm":2.8,"Drought":3.5},"d":"M385.8,342.1L437.4,341.3L437.7,358.2L438.7,358.2L438.9,368.7L456.0,368.6L455.9,434.0L375.8,433.9L336.1,434.2L335.1,373.0L355.3,372.6L355.3,369.7L360.2,369.6L360.1,367.1L368.7,366.6L368.5,359.5L377.6,359.3L377.3,342.3L385.8,342.1Z"},{"n":"Menard","r":"Central","svi":0.3,"h":{"Flood":2.8,"Tornado":3.5,"Earthquake":1.2,"Severe Storm":3.0,"Winter Storm":2.5,"Drought":3.0},"d":"M271.3,461.3L272.8,460.3L272.9,458.9L275.1,458.9L275.4,457.6L280.6,459.0L285.5,464.8L285.6,471.0L288.9,470.9L289.0,493.6L271.1,493.7L270.5,505.1L260.4,505.1L260.5,508.0L226.8,508.0L226.7,467.7L228.6,466.7L227.7,466.0L228.0,463.8L229.9,464.1L230.5,461.2L234.0,463.5L236.8,461.6L239.9,462.8L243.1,464.0L243.1,462.6L245.1,462.2L246.2,464.0L250.0,463.4L251.1,464.8L254.4,465.3L259.7,463.2L263.4,464.2L265.7,463.1L266.6,461.2L267.9,461.6L269.4,460.2L270.1,461.5L271.3,461.3Z"},{"n":"Mercer","r":"Northwest","svi":0.48,"h":{"Flood":3.5,"Tornado":2.8,"Earthquake":0.8,"Severe Storm":2.8,"Winter Storm":3.0,"Drought":2.8},"d":"M161.2,230.3L160.3,281.6L84.5,280.3L84.5,274.6L78.2,263.7L75.5,261.6L70.4,261.6L66.5,254.6L59.6,246.1L63.2,237.5L65.4,234.6L65.9,229.1L161.2,230.3Z"},{"n":"Monroe","r":"Southwest","svi":0.35,"h":{"Flood":3.0,"Tornado":3.0,"Earthquake":2.8,"Severe Storm":3.0,"Winter Storm":2.0,"Drought":2.5},"d":"M241.1,835.7L220.6,835.3L220.6,852.3L195.1,861.6L193.2,860.3L189.5,856.6L184.8,847.9L175.5,840.9L172.3,835.1L170.1,823.8L170.2,815.1L172.5,810.2L172.6,807.3L181.8,795.7L184.4,789.5L186.6,777.3L204.3,795.6L204.3,798.4L220.6,815.7L220.6,818.6L239.0,818.7L240.3,820.8L240.6,823.9L239.0,824.9L238.2,824.3L239.2,823.3L238.0,823.1L237.2,825.6L239.7,832.4L241.3,833.6L240.3,834.4L241.1,835.7Z"},{"n":"Montgomery","r":"Southwest","svi":0.65,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":2.0,"Severe Storm":3.2,"Winter Storm":2.2,"Drought":2.8},"d":"M270.5,581.8L295.7,581.6L296.1,615.9L354.4,615.8L354.5,641.4L337.9,641.5L337.9,678.0L287.8,678.3L287.8,684.0L271.0,684.0L270.5,581.8Z"},{"n":"Morgan","r":"Central","svi":0.52,"h":{"Flood":3.0,"Tornado":3.2,"Earthquake":1.2,"Severe Storm":3.0,"Winter Storm":2.5,"Drought":3.0},"d":"M226.8,513.7L226.9,530.8L228.2,530.7L228.5,544.1L237.5,575.0L237.1,582.0L180.9,582.4L181.1,559.7L175.6,559.7L175.6,554.0L170.3,553.9L170.4,537.0L153.8,537.0L153.9,529.9L136.6,529.8L139.6,524.8L141.5,521.9L139.1,517.7L138.5,514.3L139.3,512.2L139.3,513.0L226.8,513.7Z"},{"n":"Moultrie","r":"Central","svi":0.48,"h":{"Flood":2.5,"Tornado":3.5,"Earthquake":1.2,"Severe Storm":3.2,"Winter Storm":2.5,"Drought":3.2},"d":"M413.3,529.5L454.0,529.5L454.3,593.9L454.4,596.7L437.4,596.6L437.3,590.9L434.6,590.9L434.5,588.0L431.7,588.0L431.7,585.1L428.9,585.1L428.9,582.2L417.6,582.2L417.6,570.9L403.7,570.8L403.3,539.5L411.5,539.6L411.4,529.5L413.3,529.5Z"},{"n":"Ogle","r":"Northern","svi":0.38,"h":{"Flood":2.2,"Tornado":2.2,"Earthquake":0.5,"Severe Storm":2.5,"Winter Storm":3.5,"Drought":2.2},"d":"M272.6,60.2L349.5,59.3L349.5,69.8L384.3,69.4L384.1,120.2L333.2,120.9L321.5,120.9L321.5,118.0L315.9,118.0L314.0,119.6L313.7,121.3L311.3,119.6L312.8,118.5L312.1,117.2L305.9,116.1L303.4,118.2L281.5,118.3L281.5,112.6L272.9,112.6L272.6,60.2Z"},{"n":"Peoria","r":"Central","svi":0.55,"h":{"Flood":3.0,"Tornado":3.2,"Earthquake":1.0,"Severe Storm":3.0,"Winter Storm":2.8,"Drought":3.0},"d":"M228.1,298.9L308.4,299.2L307.3,306.6L303.4,310.5L300.8,318.2L296.9,323.4L296.5,326.0L291.4,334.1L291.2,336.6L293.7,348.2L292.6,351.6L287.1,355.2L283.8,359.1L283.8,363.0L277.0,371.6L277.5,377.4L274.4,380.9L270.9,379.5L264.2,381.6L259.6,381.2L245.0,388.9L244.8,367.2L227.6,366.9L228.1,298.9Z"},{"n":"Perry","r":"South","svi":0.7,"h":{"Flood":3.0,"Tornado":3.0,"Earthquake":3.5,"Severe Storm":3.0,"Winter Storm":2.0,"Drought":2.5},"d":"M286.8,836.0L353.3,837.3L353.0,854.4L356.0,854.4L355.7,858.6L354.8,858.4L358.1,860.5L358.1,862.1L357.0,862.6L357.6,865.1L356.8,865.0L357.7,867.1L355.5,868.1L355.5,869.5L354.6,869.5L354.6,872.2L353.4,872.6L355.0,875.2L353.6,877.0L354.4,879.6L351.1,887.0L348.8,888.5L286.5,887.5L286.8,836.0Z"},{"n":"Piatt","r":"Central","svi":0.38,"h":{"Flood":2.5,"Tornado":3.8,"Earthquake":1.0,"Severe Storm":3.2,"Winter Storm":2.5,"Drought":3.5},"d":"M438.8,434.0L455.9,434.0L455.7,529.5L447.2,529.5L413.3,529.5L413.3,469.7L421.9,469.7L421.9,461.2L438.8,434.0Z"},{"n":"Pike","r":"West Central","svi":0.68,"h":{"Flood":3.5,"Tornado":3.0,"Earthquake":1.2,"Severe Storm":3.0,"Winter Storm":2.5,"Drought":2.8},"d":"M140.6,520.3L141.4,522.6L136.9,528.7L135.2,535.1L129.5,546.8L131.4,552.6L135.2,559.2L140.6,578.4L137.5,589.1L134.9,594.4L133.9,601.0L134.4,606.7L85.7,605.3L77.5,601.4L70.7,596.1L67.4,591.6L65.9,581.0L62.8,579.2L53.7,577.0L51.5,573.7L50.6,568.2L49.4,566.3L42.4,562.8L35.5,554.1L21.7,541.6L22.2,535.9L89.2,536.2L89.1,519.2L140.6,520.3Z"},{"n":"Pope","r":"South","svi":0.93,"h":{"Flood":3.2,"Tornado":2.8,"Earthquake":4.5,"Severe Storm":3.0,"Winter Storm":1.8,"Drought":2.0},"d":"M418.8,956.9L463.0,956.8L462.6,991.0L456.9,993.6L453.7,997.7L452.3,1005.8L447.6,1018.2L449.3,1022.1L448.3,1022.8L451.9,1026.2L454.1,1030.8L457.6,1033.9L461.2,1044.3L458.2,1055.3L456.2,1058.8L451.4,1060.3L451.4,1042.6L418.5,1008.0L418.8,956.9Z"},{"n":"Pulaski","r":"South","svi":0.97,"h":{"Flood":4.0,"Tornado":2.8,"Earthquake":4.5,"Severe Storm":3.0,"Winter Storm":1.5,"Drought":2.0},"d":"M338.2,1008.3L368.7,1009.4L368.6,1016.4L374.7,1013.0L380.5,1014.7L380.8,1015.7L385.9,1014.6L386.1,1029.5L379.3,1028.9L377.1,1030.1L377.9,1029.1L371.0,1032.5L362.3,1041.5L359.3,1049.1L349.5,1060.6L346.1,1056.4L345.2,1057.0L337.5,1054.3L334.5,1048.9L336.8,1045.3L337.0,1042.3L335.1,1042.3L336.3,1041.2L335.5,1038.4L337.7,1036.8L337.7,1035.4L336.1,1034.3L336.7,1032.8L335.4,1029.6L336.3,1028.6L337.0,1029.3L338.6,1022.3L345.0,1017.3L344.4,1010.9L342.0,1009.0L338.2,1008.3Z"},{"n":"Putnam","r":"Northwest","svi":0.45,"h":{"Flood":3.5,"Tornado":3.0,"Earthquake":0.8,"Severe Storm":2.8,"Winter Storm":3.0,"Drought":2.8},"d":"M350.9,233.6L351.1,273.7L321.8,273.8L325.1,271.2L326.2,265.2L305.7,265.1L305.7,248.4L322.1,248.6L324.5,240.7L324.8,235.6L333.0,233.1L335.2,231.3L350.9,233.6Z"},{"n":"Randolph","r":"Southwest","svi":0.58,"h":{"Flood":3.2,"Tornado":3.0,"Earthquake":3.0,"Severe Storm":3.0,"Winter Storm":2.0,"Drought":2.5},"d":"M270.3,836.0L286.8,836.0L286.5,887.5L277.3,906.3L276.1,912.1L273.6,913.4L274.6,917.1L268.3,912.9L264.8,908.6L257.9,907.7L256.3,905.8L256.2,902.2L255.2,901.5L249.3,897.1L240.8,904.1L234.1,902.4L231.2,897.8L229.8,893.1L232.1,890.4L236.2,888.9L237.2,886.5L235.6,886.6L234.8,884.4L228.4,886.2L226.0,885.7L220.6,879.3L215.6,876.3L215.4,874.9L206.6,866.6L200.0,865.1L195.1,861.6L220.6,852.3L220.6,835.3L270.3,836.0Z"},{"n":"Richland","r":"East Central","svi":0.65,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":2.5,"Severe Storm":3.0,"Winter Storm":2.2,"Drought":2.8},"d":"M532.7,713.1L538.4,713.1L537.7,767.7L502.6,767.9L502.5,762.2L486.7,761.9L487.4,761.3L484.1,759.5L484.4,758.2L481.9,758.0L482.7,757.0L481.0,756.7L481.5,756.0L480.2,755.0L483.8,750.7L483.9,749.2L482.1,745.9L482.5,739.1L481.8,738.9L482.6,738.3L481.8,736.9L486.1,736.3L486.0,713.6L532.7,713.1Z"},{"n":"Rock Island","r":"Northwest","svi":0.55,"h":{"Flood":3.5,"Tornado":2.8,"Earthquake":0.8,"Severe Storm":2.8,"Winter Storm":3.0,"Drought":2.5},"d":"M180.4,148.3L183.5,144.9L189.8,141.4L189.0,145.4L190.6,145.4L189.0,148.5L190.6,149.6L191.0,152.7L189.3,156.9L192.2,160.1L190.7,161.5L197.7,164.7L201.9,168.5L200.0,169.2L202.1,171.1L201.0,175.1L201.4,177.7L198.2,179.4L199.2,182.5L196.8,188.6L193.3,189.2L188.8,192.1L180.5,193.2L178.8,194.8L173.3,194.8L171.3,196.4L169.7,200.8L161.5,205.0L161.2,230.3L65.9,229.1L66.8,222.4L69.0,218.9L69.5,214.2L70.6,212.5L79.6,209.4L86.6,211.8L99.6,205.3L114.3,206.4L127.9,204.0L135.0,198.4L137.0,194.5L142.9,191.8L151.3,193.0L157.1,191.9L164.2,183.9L174.8,179.3L174.7,167.7L176.1,161.4L179.1,158.2L178.6,153.0L180.4,148.3Z"},{"n":"Saline","r":"South","svi":0.78,"h":{"Flood":3.0,"Tornado":3.2,"Earthquake":4.0,"Severe Storm":3.2,"Winter Storm":1.8,"Drought":2.2},"d":"M419.1,896.9L468.7,896.6L468.6,956.8L463.1,956.8L418.8,956.9L419.1,896.9Z"},{"n":"Sangamon","r":"Central","svi":0.42,"h":{"Flood":2.8,"Tornado":3.8,"Earthquake":1.2,"Severe Storm":3.2,"Winter Storm":2.5,"Drought":3.2},"d":"M342.8,505.1L342.8,525.3L340.4,525.4L340.0,523.6L338.2,522.9L336.5,526.8L331.7,529.3L330.1,532.6L327.2,533.3L326.0,535.1L322.3,533.4L321.1,536.5L319.1,536.3L317.7,537.0L317.1,538.9L313.9,539.0L312.7,537.2L313.0,536.0L311.8,535.4L311.9,550.5L303.8,550.5L303.9,558.9L295.4,558.9L295.6,581.6L237.1,582.0L237.5,575.0L228.5,544.1L228.2,530.7L226.9,530.8L226.8,508.0L260.5,508.0L260.4,505.1L270.5,505.1L271.1,493.7L303.0,493.5L303.2,501.9L314.8,502.0L314.8,504.8L342.8,505.1Z"},{"n":"Schuyler","r":"West Central","svi":0.65,"h":{"Flood":3.2,"Tornado":3.0,"Earthquake":1.2,"Severe Storm":3.0,"Winter Storm":2.5,"Drought":2.8},"d":"M158.8,435.1L158.5,452.1L196.2,453.1L195.8,457.3L193.8,459.5L186.1,458.8L179.8,461.7L175.9,462.2L173.7,464.6L170.5,464.9L167.3,471.0L167.2,473.7L162.0,477.2L161.0,484.7L150.5,489.6L149.0,492.0L148.2,491.2L146.4,492.2L135.3,492.5L136.1,488.2L133.6,485.8L135.3,484.9L135.4,483.3L134.7,482.5L131.9,484.3L128.3,482.4L128.6,481.1L127.2,479.8L125.2,479.9L125.6,473.2L122.1,473.4L120.1,471.3L122.1,468.7L89.6,468.6L90.2,433.5L158.8,435.1Z"},{"n":"Scott","r":"West Central","svi":0.65,"h":{"Flood":3.2,"Tornado":3.0,"Earthquake":1.2,"Severe Storm":3.0,"Winter Storm":2.5,"Drought":2.8},"d":"M139.2,582.2L140.6,578.7L139.9,574.7L135.7,563.0L135.2,559.2L130.1,549.7L129.5,547.2L130.2,544.2L135.2,535.1L136.6,529.8L153.9,529.9L153.8,537.0L170.4,537.0L170.3,553.9L175.6,554.0L175.6,559.7L181.1,559.7L180.9,582.4L139.2,582.2Z"},{"n":"Shelby","r":"Central","svi":0.6,"h":{"Flood":2.5,"Tornado":3.5,"Earthquake":1.5,"Severe Storm":3.2,"Winter Storm":2.5,"Drought":3.2},"d":"M371.5,556.3L403.6,556.5L403.7,570.8L417.6,570.9L417.6,582.2L428.9,582.2L428.9,585.1L431.7,585.1L431.7,588.0L434.5,588.0L434.6,590.9L437.3,590.9L437.4,596.6L454.4,596.7L454.3,642.0L396.0,641.7L354.5,641.5L354.4,615.8L371.5,616.4L371.5,556.3Z"},{"n":"St. Clair","r":"Southwest","svi":0.55,"h":{"Flood":3.0,"Tornado":3.0,"Earthquake":2.5,"Severe Storm":3.2,"Winter Storm":2.0,"Drought":2.5},"d":"M269.7,751.1L270.3,836.0L241.1,835.7L240.3,834.4L241.3,833.6L239.7,832.4L237.2,825.6L238.0,823.1L239.2,823.5L238.2,824.4L239.8,824.9L240.7,822.9L239.0,818.7L220.6,818.6L220.6,815.7L204.3,798.4L204.3,795.6L186.6,777.3L187.0,775.9L192.4,766.9L197.6,761.2L199.4,755.7L198.8,750.1L269.7,751.1Z"},{"n":"Stark","r":"Northwest","svi":0.52,"h":{"Flood":2.5,"Tornado":3.0,"Earthquake":0.8,"Severe Storm":2.8,"Winter Storm":3.0,"Drought":3.0},"d":"M247.2,248.3L280.0,248.4L280.0,299.1L265.5,299.1L228.1,298.9L228.2,264.9L245.6,264.9L245.7,248.3L247.2,248.3Z"},{"n":"Stephenson","r":"Northern","svi":0.5,"h":{"Flood":2.5,"Tornado":2.0,"Earthquake":0.5,"Severe Storm":2.5,"Winter Storm":3.8,"Drought":2.0},"d":"M315.4,1.5L316.2,59.7L238.0,60.7L237.9,43.8L236.9,0.5L315.4,1.5Z"},{"n":"Tazewell","r":"Central","svi":0.4,"h":{"Flood":2.8,"Tornado":3.5,"Earthquake":1.0,"Severe Storm":3.0,"Winter Storm":2.8,"Drought":3.0},"d":"M335.1,373.0L335.9,425.5L268.6,426.7L268.2,404.0L237.2,404.0L239.7,402.1L242.7,396.7L243.4,390.8L245.0,388.9L259.4,381.2L264.2,381.6L269.5,380.3L271.2,379.5L273.8,381.2L277.3,378.0L276.9,372.0L283.8,363.2L283.8,359.1L292.8,351.2L293.7,348.2L292.4,343.2L326.0,343.1L326.4,369.0L335.0,368.8L335.1,373.0Z"},{"n":"Union","r":"South","svi":0.72,"h":{"Flood":3.5,"Tornado":3.0,"Earthquake":4.2,"Severe Storm":3.0,"Winter Storm":1.8,"Drought":2.2},"d":"M369.1,957.4L368.7,1009.4L302.7,1008.5L310.5,1006.2L312.3,997.0L309.5,988.2L301.6,976.9L298.2,969.2L297.4,964.8L297.5,962.2L299.3,960.9L300.5,961.2L300.4,962.5L305.9,963.7L307.6,960.7L308.4,957.1L307.6,956.7L369.1,957.4Z"},{"n":"Vermilion","r":"East Central","svi":0.65,"h":{"Flood":2.5,"Tornado":3.2,"Earthquake":1.5,"Severe Storm":3.2,"Winter Storm":2.8,"Drought":3.2},"d":"M534.3,394.2L595.4,393.2L594.3,511.8L587.1,511.9L590.6,514.5L584.7,514.6L581.8,514.6L582.1,512.0L533.9,512.3L533.3,445.0L535.3,445.0L534.3,394.2Z"},{"n":"Wabash","r":"South","svi":0.74,"h":{"Flood":3.5,"Tornado":3.0,"Earthquake":3.8,"Severe Storm":3.0,"Winter Storm":2.0,"Drought":2.5},"d":"M531.4,767.6L576.7,768.0L576.8,770.4L573.9,772.6L577.6,779.2L575.8,781.0L573.5,779.9L570.8,783.5L567.5,785.2L563.3,785.5L562.0,786.9L561.1,789.8L564.0,790.4L564.9,791.9L563.2,793.9L562.5,799.3L557.5,806.5L553.6,808.0L551.1,811.2L549.6,815.4L549.7,821.3L547.4,825.0L545.1,824.1L544.6,822.2L545.5,819.3L544.4,818.0L542.8,818.7L541.5,823.0L538.1,826.5L536.7,825.0L538.4,821.5L535.6,820.6L531.8,825.2L533.1,828.6L531.0,829.9L530.8,832.3L529.2,832.4L528.1,829.8L526.1,828.4L525.9,826.2L528.6,825.3L527.9,823.7L531.9,822.2L531.0,819.2L532.5,818.7L532.7,817.3L530.9,816.4L531.5,812.7L529.6,810.0L528.1,804.4L529.8,802.6L528.2,800.7L530.7,796.9L531.8,797.3L531.3,795.9L532.4,795.1L531.7,794.6L533.1,791.2L532.3,790.3L533.3,788.6L532.4,788.3L532.8,786.7L531.1,781.9L532.4,780.2L531.6,777.5L534.0,775.8L533.0,773.3L531.7,772.9L531.7,770.2L530.8,769.3L531.4,767.6Z"},{"n":"Warren","r":"West Central","svi":0.58,"h":{"Flood":2.8,"Tornado":3.0,"Earthquake":1.0,"Severe Storm":3.0,"Winter Storm":2.8,"Drought":3.0},"d":"M160.3,281.6L159.5,366.6L116.8,365.4L108.1,365.0L108.7,280.5L160.3,281.6Z"},{"n":"Washington","r":"Southwest","svi":0.58,"h":{"Flood":2.8,"Tornado":3.0,"Earthquake":2.8,"Severe Storm":3.0,"Winter Storm":2.0,"Drought":2.5},"d":"M330.3,779.7L353.8,780.7L353.3,837.3L270.3,836.0L270.1,797.2L271.6,797.5L271.3,795.9L272.7,795.0L274.2,795.9L274.7,794.0L275.7,794.6L276.1,792.0L279.0,792.6L278.9,791.5L281.4,791.0L281.4,788.5L282.4,788.8L283.6,786.6L287.4,786.0L289.1,784.5L289.6,785.6L290.9,784.6L290.6,786.0L294.5,786.4L294.9,785.0L298.7,786.6L302.1,786.8L302.1,785.7L303.8,787.0L307.4,785.2L308.4,783.4L310.5,783.1L311.3,781.5L314.0,783.8L314.7,782.1L315.4,783.4L316.2,783.2L315.9,782.3L320.5,781.7L321.8,777.8L322.9,777.6L323.8,779.4L326.7,778.6L330.3,779.7Z"},{"n":"Wayne","r":"South","svi":0.76,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":3.5,"Severe Storm":3.2,"Winter Storm":2.0,"Drought":2.5},"d":"M420.4,760.6L502.5,762.2L502.1,828.8L499.3,828.8L419.7,828.7L420.4,760.6Z"},{"n":"White","r":"South","svi":0.83,"h":{"Flood":3.2,"Tornado":3.0,"Earthquake":4.0,"Severe Storm":3.0,"Winter Storm":1.8,"Drought":2.2},"d":"M526.5,828.7L527.6,831.9L526.7,836.6L527.7,839.5L534.1,845.3L534.4,848.2L535.8,847.6L536.3,844.9L537.6,845.3L538.0,847.0L535.5,849.1L535.5,850.6L532.8,854.1L529.6,852.9L528.1,857.5L524.2,857.5L522.4,858.9L523.0,862.3L530.5,859.3L531.1,861.9L529.5,865.7L527.3,867.5L518.4,869.6L519.0,872.2L523.4,872.7L521.4,875.0L521.0,878.3L522.8,884.7L522.0,886.4L519.2,887.2L520.1,892.5L518.5,893.5L515.9,891.6L514.3,893.3L515.5,894.9L521.6,895.6L522.6,899.2L521.7,900.6L514.9,899.5L511.1,897.0L510.1,897.7L510.9,900.0L510.0,900.2L508.0,897.4L504.3,895.1L504.3,896.7L468.7,896.6L469.3,829.0L526.5,828.7Z"},{"n":"Whiteside","r":"Northern","svi":0.48,"h":{"Flood":3.0,"Tornado":2.2,"Earthquake":0.5,"Severe Storm":2.5,"Winter Storm":3.5,"Drought":2.2},"d":"M203.3,112.9L281.5,112.6L281.0,180.0L198.3,180.1L198.6,178.9L201.3,177.9L201.0,175.1L202.1,171.1L200.0,169.2L201.9,168.5L197.7,164.7L191.2,162.1L190.7,161.4L192.1,160.8L192.1,159.0L190.6,158.2L189.3,156.9L191.0,152.7L190.6,149.6L189.0,148.5L190.6,145.4L189.0,145.4L189.8,141.4L198.9,136.5L198.6,130.8L202.9,117.8L203.3,112.9Z"},{"n":"Will","r":"Northeast","svi":0.3,"h":{"Flood":2.5,"Tornado":2.5,"Earthquake":0.5,"Severe Storm":2.8,"Winter Storm":3.2,"Drought":2.2},"d":"M485.6,152.8L520.1,151.9L520.5,169.0L537.7,168.5L538.1,185.5L555.6,185.1L556.0,202.4L595.5,202.4L595.3,235.9L574.1,236.2L522.6,237.0L522.9,253.9L488.2,254.7L485.6,152.8Z"},{"n":"Williamson","r":"South","svi":0.65,"h":{"Flood":2.8,"Tornado":3.2,"Earthquake":3.8,"Severe Storm":3.2,"Winter Storm":2.0,"Drought":2.5},"d":"M352.8,905.7L419.1,905.4L418.8,956.9L383.2,957.5L352.4,956.7L352.8,905.7Z"},{"n":"Winnebago","r":"Northern","svi":0.55,"h":{"Flood":2.5,"Tornado":2.2,"Earthquake":0.5,"Severe Storm":2.8,"Winter Storm":3.8,"Drought":2.0},"d":"M384.2,2.6L384.3,69.4L349.5,69.8L349.5,59.3L338.0,59.4L316.2,59.7L315.4,1.5L384.2,2.6Z"},{"n":"Woodford","r":"Central","svi":0.25,"h":{"Flood":2.5,"Tornado":3.5,"Earthquake":1.0,"Severe Storm":3.0,"Winter Storm":2.8,"Drought":3.2},"d":"M368.2,308.5L385.5,308.1L385.8,342.1L377.3,342.3L377.6,359.3L368.5,359.5L368.7,366.6L360.1,367.1L360.2,369.6L355.3,369.7L355.3,372.6L335.1,373.0L335.0,368.8L326.4,369.0L326.0,343.1L292.5,343.2L291.1,336.2L292.4,331.4L300.7,318.4L302.5,312.5L304.7,309.4L368.2,308.5Z"}]};
+const TREND = null;
+const CONTACT_EMAIL = "";
+const HZ = ["Flood","Tornado","Drought","Severe Storm","Winter Storm","Earthquake"];
+const METRICS = ["Vulnerability (SVI)"].concat(HZ);
+const METRO = ["Cook","DuPage","Kane","Kendall","Lake","McHenry","Will"];
+const C = DATA.counties, BYN = Object.fromEntries(C.map(c=>[c.n,c]));
+const $ = id => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const mean = a => a.reduce((s,x)=>s+x,0)/a.length;
+const f2 = x => x.toFixed(2);
+const state = {metric:0, region:"All", sel:"Cook", hz:"Flood", hzTh:3.0, svTh:0.65};
+const stateSvi = mean(C.map(c=>c.svi));
+const medSvi = (()=>{const s=C.map(c=>c.svi).sort((a,b)=>a-b);return (s[50]+s[51])/2})();
+
+function hex(h){h=h.replace('#','');return [0,2,4].map(i=>parseInt(h.substr(i,2),16))}
+function ramp(kind,t){
+  t=Math.max(0,Math.min(1,t)); const st=[0,1,2,3,4].map(i=>hex(css('--'+kind+i)));
+  const x=t*4, i=Math.min(3,Math.floor(x)), u=x-i, a=st[i], b=st[i+1];
+  return 'rgb('+a.map((v,k)=>Math.round(v+(b[k]-v)*u)).join(',')+')';
+}
+function mlab(mi){return mi===0?'vulnerability':METRICS[mi].toLowerCase()}
+function val(c,mi){return mi===0?c.svi:c.h[METRICS[mi]]}
+function dom(mi){return mi===0?[0,1]:[1,5]}
+function colorFor(c,mi){const [lo,hi]=dom(mi);return ramp(mi===0?'svi':'risk',(val(c,mi)-lo)/(hi-lo))}
+function inRegion(c){return state.region==="All"||(state.region==="Chicago metro"?METRO.includes(c.n):c.r===state.region)}
+
+/* tooltip */
+const tt=$('tt');
+function showTip(e,html){tt.innerHTML=html;tt.hidden=false;const w=tt.offsetWidth;let x=e.clientX+14,y=e.clientY+14;if(x+w>innerWidth-8)x=e.clientX-w-14;tt.style.left=x+'px';tt.style.top=y+'px'}
+function hideTip(){tt.hidden=true}
+
+/* maps */
+function buildMap(svg,interactive){
+  svg.setAttribute('viewBox','0 0 '+DATA.vb[0]+' '+DATA.vb[1]);
+  svg.innerHTML='';
+  C.forEach(c=>{const p=document.createElementNS(NS,'path');p.setAttribute('d',c.d);p.setAttribute('class','co');p.dataset.n=c.n;
+    if(interactive){
+      p.addEventListener('click',()=>select(c.n));
+      p.addEventListener('mousemove',e=>showTip(e,'<b>'+c.n+' County</b>'+METRICS[state.metric]+': '+f2(val(c,state.metric))));
+      p.addEventListener('mouseleave',hideTip);
+    } else {p.style.cursor='default';p.style.pointerEvents='none'}
+    svg.appendChild(p)});
+}
+function paintMaps(){
+  document.querySelectorAll('#heroMap .co').forEach(p=>{p.style.fill=colorFor(BYN[p.dataset.n],0)});
+  document.querySelectorAll('#map .co').forEach(p=>{const c=BYN[p.dataset.n];p.style.fill=colorFor(c,state.metric);
+    p.classList.toggle('off',!inRegion(c));p.classList.toggle('sel',c.n===state.sel)});
+  const mi=state.metric,[lo,hi]=dom(mi),kind=mi===0?'svi':'risk';
+  $('legBar').style.background='linear-gradient(90deg,'+[0,1,2,3,4].map(i=>css('--'+kind+i)).join(',')+')';
+  $('legLo').textContent=(mi===0?'0 · least vulnerable':'1 · lowest risk');$('legHi').textContent=(mi===0?'1 · most vulnerable':'5 · highest risk');
+}
+/* selected-county panel */
+function rankOf(c,mi,pool){const s=pool.slice().sort((a,b)=>val(b,mi)-val(a,mi));return s.findIndex(x=>x.n===c.n)+1}
+function bars(c){
+  const rows=[{l:'Vulnerability',v:c.svi,max:1,k:'svi',m:stateSvi,txt:f2(c.svi)}].concat(HZ.map(h=>({l:h,v:c.h[h],max:5,k:'risk',m:mean(C.map(x=>x.h[h])),txt:c.h[h].toFixed(1)})));
+  return rows.map(r=>'<div class="row'+((state.metric===0&&r.l==='Vulnerability')||METRICS[state.metric]===r.l?' hot':'')+'"><span>'+r.l+'</span><div class="bar"><i style="width:'+(r.v/r.max*100)+'%;background:'+ramp(r.k,r.v/r.max)+'"></i><u style="left:'+(r.m/r.max*100)+'%" title="State average"></u></div><b>'+r.txt+'</b></div>').join('');
+}
+function renderDetail(){
+  const c=BYN[state.sel],pool=C.filter(inRegion),mi=state.metric;
+  const hot=HZ.filter(h=>c.h[h]>=3.0&&c.svi>=0.65);
+  const badge=hot.length?'<span class="badge bad">High on both: '+hot.join(', ')+'</span>':(c.svi>=0.65?'<span class="badge warn">High vulnerability</span>':'<span class="badge ok">Neither measure is in the top band</span>');
+  const inPool=pool.some(x=>x.n===c.n);
+  const top=pool.slice().sort((a,b)=>val(b,mi)-val(a,mi)).slice(0,10);
+  $('detail').innerHTML='<h3>'+c.n+' County</h3><p class="sub">'+c.r+' Illinois'+(inPool?' · #'+rankOf(c,mi,pool)+' of '+pool.length+' for '+mlab(mi):'')+'</p>'+badge+
+   '<div class="rows">'+bars(c)+'</div><p class="note" style="margin-top:10px">Dark tick = state average. Bars show a 0 to 1 scale for vulnerability and 0 to 5 for hazards.</p>'+
+   '<div class="toplist"><h4>Highest '+mlab(mi)+(state.region==="All"?' in Illinois':' in '+state.region)+'</h4><ol>'+top.map((x,i)=>'<li><button data-n="'+x.n+'"><span>'+(i+1)+'</span><span>'+x.n+'</span><span>'+(mi===0?f2(x.svi):x.h[METRICS[mi]].toFixed(1))+'</span></button></li>').join('')+'</ol></div>';
+  $('detail').querySelectorAll('button[data-n]').forEach(b=>b.onclick=()=>select(b.dataset.n));
+}
+function select(n){state.sel=n;paintMaps();renderDetail();drawScatter()}
+
+/* controls */
+function seg(el,items,get,set,label){
+  el.innerHTML='';items.forEach((t,i)=>{const b=document.createElement('button');b.textContent=label?label(t):t;b.setAttribute('aria-pressed',String(get(t,i)));b.onclick=()=>{set(t,i);seg(el,items,get,set,label)};el.appendChild(b)})}
+function initControls(){
+  seg($('metricSeg'),METRICS,(t,i)=>i===state.metric,(t,i)=>{state.metric=i;paintMaps();renderDetail()});
+  const rs=$('regionSel');["All","Chicago metro"].concat([...new Set(C.map(c=>c.r))].sort()).forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r==="All"?"All of Illinois":r;rs.appendChild(o)});
+  rs.onchange=()=>{state.region=rs.value;paintMaps();renderDetail()};
+  seg($('hzSeg'),HZ,t=>t===state.hz,t=>{state.hz=t;drawScatter()});
+  const h=$('hzTh'),s=$('svTh');h.value=state.hzTh;s.value=state.svTh;
+  h.oninput=()=>{state.hzTh=+h.value;drawScatter()};s.oninput=()=>{state.svTh=+s.value;drawScatter()};
+}
+
+/* svg helpers */
+function el(name,attrs,parent,text){const e=document.createElementNS(NS,name);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e}
+
+/* scatter */
+function drawScatter(){
+  const svg=$('scatter');svg.innerHTML='';const W=640,H=470,m={l:52,r:16,t:16,b:50};svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.width='100%';
+  const x=v=>m.l+(v-0.0)/(1.0)*(W-m.l-m.r), y=v=>H-m.b-(v-1)/(5-1)*(H-m.t-m.b);
+  [1,2,3,4,5].forEach(v=>{el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:css('--line')},svg);el('text',{x:m.l-10,y:y(v)+4,'text-anchor':'end'},svg,v)});
+  [0,.2,.4,.6,.8,1].forEach(v=>{el('text',{x:x(v),y:H-m.b+20,'text-anchor':'middle'},svg,v===0?'0':v.toFixed(1))});
+  el('text',{x:(m.l+W-m.r)/2,y:H-10,'text-anchor':'middle'},svg,'Social vulnerability score (0 to 1)');
+  const yl=el('text',{x:14,y:(m.t+H-m.b)/2,'text-anchor':'middle',transform:'rotate(-90 14 '+(m.t+H-m.b)/2+')'},svg,state.hz+' hazard score (1 to 5)');
+  const th=state.hzTh,sv=state.svTh;
+  el('rect',{x:x(sv),y:y(5),width:x(1)-x(sv),height:y(th)-y(5),fill:css('--bad-bg'),opacity:.9},svg);
+  el('line',{x1:x(sv),x2:x(sv),y1:y(5),y2:y(1),stroke:css('--ink'),'stroke-dasharray':'4 4',opacity:.5},svg);
+  el('line',{x1:x(0),x2:x(1),y1:y(th),y2:y(th),stroke:css('--ink'),'stroke-dasharray':'4 4',opacity:.5},svg);
+  el('text',{x:x(1)-8,y:y(5)+18,'text-anchor':'end',style:'fill:'+css('--bad')+';font-weight:700'},svg,'High on both');
+  const pri=[];
+  const jit=c=>((c.n.charCodeAt(0)*7+c.n.length*13)%9-4)*0.018;
+  C.forEach(c=>{const v=c.h[state.hz],isP=v>=th&&c.svi>=sv;if(isP)pri.push(c);
+    const dot=el('circle',{cx:x(c.svi),cy:y(Math.max(1,Math.min(5,v+jit(c)))),r:isP?7:5.5,fill:isP?css('--risk3'):css('--svi2'),'fill-opacity':isP?.95:.55,stroke:c.n===state.sel?css('--ink'):css('--surface'),'stroke-width':c.n===state.sel?3:1.5,style:'cursor:pointer'},svg);
+    dot.addEventListener('mousemove',e=>showTip(e,'<b>'+c.n+' County</b>Vulnerability '+f2(c.svi)+'<br>'+state.hz+' '+v.toFixed(1)));
+    dot.addEventListener('mouseleave',hideTip);dot.addEventListener('click',()=>select(c.n));});
+  $('hzVal').textContent=th.toFixed(1);$('svVal').textContent=f2(sv);
+  $('priN').textContent=pri.length;
+  $('priTxt').textContent=pri.length===0?'No county is high on both at these settings. Lower a line to widen the search.':(pri.length===1?'county is high on both':'counties are high on both')+' ('+state.hz.toLowerCase()+' and vulnerability).';
+  const chips=$('priChips');chips.innerHTML='';pri.sort((a,b)=>b.svi-a.svi).forEach(c=>{const b=document.createElement('button');b.className='chip';b.textContent=c.n;b.onclick=()=>{select(c.n);$('explorer').scrollIntoView()};chips.appendChild(b)});
+}
+
+/* regions bar chart */
+function drawRegions(){
+  const svg=$('regions');svg.innerHTML='';
+  const regs=[...new Set(C.map(c=>c.r))].map(r=>({l:r,v:mean(C.filter(c=>c.r===r).map(c=>c.svi)),n:C.filter(c=>c.r===r).length}));
+  regs.push({l:'Chicago metro',v:mean(C.filter(c=>METRO.includes(c.n)).map(c=>c.svi)),n:7});
+  regs.sort((a,b)=>b.v-a.v);
+  const W=560,rowH=38,m={l:118,r:48,t:8,b:30},H=m.t+m.b+rowH*regs.length;svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.width='100%';
+  const x=v=>m.l+v*(W-m.l-m.r);
+  [0,.25,.5,.75,1].forEach(v=>{el('line',{x1:x(v),x2:x(v),y1:m.t,y2:H-m.b,stroke:css('--line')},svg);el('text',{x:x(v),y:H-10,'text-anchor':'middle'},svg,v.toFixed(2).replace(/0$/,''))});
+  regs.forEach((r,i)=>{const yy=m.t+i*rowH;
+    el('text',{x:m.l-10,y:yy+rowH/2+4,'text-anchor':'end',style:'fill:'+css('--ink')},svg,r.l);
+    const b=el('rect',{x:x(0),y:yy+8,width:Math.max(2,x(r.v)-x(0)),height:rowH-16,rx:4,fill:ramp('svi',r.v),style:'cursor:default'},svg);
+    el('text',{x:x(r.v)+8,y:yy+rowH/2+4,class:'hl',style:'fill:'+css('--ink')+';font-weight:700'},svg,f2(r.v));
+    b.addEventListener('mousemove',e=>showTip(e,'<b>'+r.l+'</b>Average vulnerability '+f2(r.v)+'<br>'+r.n+' counties'));b.addEventListener('mouseleave',hideTip)});
+  el('line',{x1:x(stateSvi),x2:x(stateSvi),y1:m.t,y2:H-m.b,stroke:css('--ink'),'stroke-width':2},svg);
+  el('text',{x:x(stateSvi)+6,y:H-m.b-4,class:'hl',style:'fill:'+css('--ink')+';font-weight:700;font-size:12px'},svg,'State '+f2(stateSvi));
+}
+function drawHist(){
+  const svg=$('hist');svg.innerHTML='';const bins=10,counts=Array(bins).fill(0);C.forEach(c=>counts[Math.min(bins-1,Math.floor(c.svi*bins))]++);
+  const W=560,H=330,m={l:36,r:10,t:16,b:44},mx=Math.max(...counts)+2;svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.width='100%';
+  const bw=(W-m.l-m.r)/bins,y=v=>H-m.b-v/mx*(H-m.t-m.b);
+  for(let v=0;v<=mx;v+=5){el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:css('--line')},svg);el('text',{x:m.l-8,y:y(v)+4,'text-anchor':'end'},svg,v)}
+  counts.forEach((n,i)=>{const lo=i/bins,b=el('rect',{x:m.l+i*bw+2,y:y(n),width:bw-4,height:Math.max(0,y(0)-y(n)),rx:3,fill:ramp('svi',lo+0.05)},svg);
+    if(n>0)el('text',{x:m.l+i*bw+bw/2,y:y(n)-6,'text-anchor':'middle',style:'fill:'+css('--ink')+';font-weight:700'},svg,n);
+    el('text',{x:m.l+i*bw,y:H-m.b+18,'text-anchor':'middle'},svg,lo.toFixed(1));if(i===bins-1)el('text',{x:m.l+bins*bw,y:H-m.b+18,'text-anchor':'middle'},svg,'1.0');
+    b.addEventListener('mousemove',e=>showTip(e,'<b>'+n+' counties</b>Score '+lo.toFixed(1)+' to '+((i+1)/bins).toFixed(1)));b.addEventListener('mouseleave',hideTip)});
+  el('text',{x:(m.l+W-m.r)/2,y:H-4,'text-anchor':'middle'},svg,'Social vulnerability score');
+}
+
+/* trend (renders only when real multi-year data is supplied) */
+function drawTrend(){
+  if(!TREND)return;$('trend').hidden=false;
+  const yrs=TREND.years,get=n=>TREND.counties[n];
+  const names=Object.keys(TREND.counties);
+  const series=[{l:'Illinois average',vals:yrs.map((y,i)=>mean(names.map(n=>get(n)[i]).filter(v=>v!=null))),c:css('--ink')},
+                {l:'Chicago metro average',vals:yrs.map((y,i)=>mean(METRO.filter(n=>get(n)).map(n=>get(n)[i]))),c:css('--brand')}];
+  const sel=get(state.sel);if(sel)series.push({l:state.sel+' County',vals:sel,c:css('--risk3')});
+  $('trendLede').textContent='CDC/ATSDR releases for '+yrs.join(', ')+', county level.';
+  $('trendSub').textContent='Higher means more vulnerable.';
+  const svg=$('trendLine');svg.innerHTML='';const W=560,H=360,m={l:44,r:120,t:20,b:40};svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.style.width='100%';
+  const all=series.flatMap(s=>s.vals),lo=Math.floor(Math.min(...all)*20)/20-0.05,hi=Math.min(1,Math.ceil(Math.max(...all)*20)/20+0.05);
+  const x=i=>m.l+i/(yrs.length-1)*(W-m.l-m.r),y=v=>H-m.b-(v-lo)/(hi-lo)*(H-m.t-m.b);
+  for(let v=Math.ceil(lo*10)/10;v<=hi+1e-9;v+=0.1){el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),stroke:css('--line')},svg);el('text',{x:m.l-8,y:y(v)+4,'text-anchor':'end'},svg,v.toFixed(1))}
+  yrs.forEach((yr,i)=>el('text',{x:x(i),y:H-14,'text-anchor':'middle'},svg,yr));
+  series.forEach(s=>{el('polyline',{points:s.vals.map((v,i)=>x(i)+','+y(v)).join(' '),fill:'none',stroke:s.c,'stroke-width':2.5,'stroke-linejoin':'round'},svg);
+    s.vals.forEach((v,i)=>{const d=el('circle',{cx:x(i),cy:y(v),r:i===s.vals.length-1?6:4,fill:s.c,stroke:css('--surface'),'stroke-width':2},svg);d.addEventListener('mousemove',e=>showTip(e,'<b>'+s.l+'</b>'+yrs[i]+': '+f2(v)));d.addEventListener('mouseleave',hideTip)});
+    const lv=s.vals[s.vals.length-1];el('text',{x:x(yrs.length-1)+10,y:y(lv)+4,style:'fill:'+s.c+';font-weight:700;font-size:12.5px'},svg,s.l.replace(' average',''))});
+  const mv=names.filter(n=>get(n)[0]!=null&&get(n)[yrs.length-1]!=null).map(n=>({n,d:get(n)[yrs.length-1]-get(n)[0]})).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d)).slice(0,8);
+  $('trendMovers').innerHTML='<div class="rows">'+mv.map(r=>'<div class="row" style="grid-template-columns:110px 1fr 56px"><span>'+r.n+'</span><div class="bar"><i style="width:'+Math.min(100,Math.abs(r.d)*400)+'%;background:'+(r.d>0?css('--risk3'):css('--svi2'))+'"></i></div><b>'+(r.d>0?'+':'')+r.d.toFixed(2)+'</b></div>').join('')+'</div>';
+}
+
+function drawAll(){paintMaps();renderDetail();drawScatter();drawRegions();drawHist();drawTrend()}
+function init(){
+  buildMap($('heroMap'),false);buildMap($('map'),true);initControls();
+  const hi=C.filter(c=>c.svi>=0.65).length;
+  $('stats').innerHTML=[[C.length,'counties mapped'],[HZ.length,'hazards tracked'],[hi,'counties with high vulnerability'],[1,'official decides, every time']].map(a=>'<div><b>'+a[0]+'</b><span>'+a[1]+'</span></div>').join('');
+  $('contactLine').innerHTML=CONTACT_EMAIL?('Contact: <span style="user-select:all">'+CONTACT_EMAIL+'</span>'):'Muhammad Usman · University of Chicago Booth School of Business';
+  drawAll();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change',drawAll);
+  new MutationObserver(drawAll).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+}
+init();
+</script>

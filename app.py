@@ -151,13 +151,17 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
 # ----------------------------------------------------
 _workspace = st.radio(
     "Workspace",
-    ["CivicSignal prioritization", "Hazard dashboard", "Cooling centers & shelters"],
+    ["CivicSignal prioritization", "Hazard dashboard", "Cooling centers & shelters", "Illinois SVI website"],
     horizontal=True,
     key="workspace",
 )
 if _workspace == "CivicSignal prioritization":
     import civicsignal_ui
     civicsignal_ui.render()
+    st.stop()
+if _workspace == "Illinois SVI website":
+    import website_ui
+    website_ui.render()
     st.stop()
 if _workspace == "Cooling centers & shelters":
     import heat_ui
