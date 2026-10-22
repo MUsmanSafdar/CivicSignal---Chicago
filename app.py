@@ -52,7 +52,7 @@ RG_SCALE = [[0.0, GREEN], [0.5, NEUTRAL], [1.0, RED]]
 from pathlib import Path as _P
 try:
     from PIL import Image as _Img
-    _FAVICON = _Img.open(_P(__file__).parent / "assets" / "favicon.png")
+    _FAVICON = _Img.open(_P(__file__).parent / ("assets" if (_P(__file__).parent / "assets" / "favicon.png").exists() else ".") / "favicon.png")
 except Exception:
     _FAVICON = "📍"
 
@@ -138,6 +138,60 @@ html { font-size: 17px; }
 .section-accent { height: 3px; background: #0071e3; border-radius: 2px; margin: 0.4rem 0 1rem; }
 </style>
 """, unsafe_allow_html=True)
+
+# ---- Premium look: branded header, glass nav, animated cards ----
+import base64 as _b64
+def _logo_uri():
+    for _c in (_P(__file__).parent / "assets" / "logo.png", _P(__file__).parent / "logo.png"):
+        try:
+            return "data:image/png;base64," + _b64.b64encode(_c.read_bytes()).decode()
+        except Exception:
+            pass
+    return ""
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@400;500;600;700&display=swap');
+html, body, .stApp, .stApp p, .stApp li, .stApp label, .stApp span, .stApp input, .stApp textarea { font-family: 'Public Sans', 'Segoe UI', sans-serif; }
+.stApp h1, .stApp h2, .stApp h3 { font-family: 'Bricolage Grotesque', 'Segoe UI', sans-serif !important; letter-spacing: -0.02em; }
+.stApp { background: radial-gradient(900px 520px at 85% -5%, rgba(10,98,208,0.16), transparent 60%), radial-gradient(700px 420px at 0% 30%, rgba(238,123,59,0.10), transparent 60%), linear-gradient(180deg, #e3effb 0%, #f1f6fc 40%, #f8fbfe 100%) !important; }
+.cs-top { position: relative; overflow: hidden; border-radius: 22px; padding: 1.5rem 1.8rem; margin: 0.2rem 0 0.9rem; color: #eaf1fa;
+  background: radial-gradient(600px 260px at 90% 0%, rgba(90,166,255,0.45), transparent 65%), radial-gradient(500px 240px at 0% 100%, rgba(207,63,44,0.28), transparent 65%), #0b1626;
+  box-shadow: 0 22px 60px rgba(11,22,38,0.28); display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; animation: csfade .7s ease both; }
+.cs-top::after { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 38px 38px; -webkit-mask-image: linear-gradient(90deg, transparent 30%, #000); mask-image: linear-gradient(90deg, transparent 30%, #000); pointer-events: none; }
+.cs-top > * { position: relative; z-index: 1; }
+.cs-top img { width: 58px; height: 58px; border-radius: 50%; background: #fff; padding: 5px; box-shadow: 0 0 0 4px rgba(90,166,255,0.35); }
+.cs-top h1 { margin: 0 !important; color: #ffffff !important; font-size: 2rem !important; line-height: 1.05; }
+.cs-top h1 em { font-style: normal; background: linear-gradient(100deg, #7db8ff, #ffb26b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cs-top p { margin: 0.25rem 0 0 !important; color: #b4c6dc !important; font-size: 0.98rem; }
+.cs-pills { margin-left: auto; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.cs-pills span { color: #eaf1fa !important; border: 1px solid rgba(255,255,255,0.28); background: rgba(255,255,255,0.08); border-radius: 99px; padding: 0.35rem 0.85rem; font-size: 0.82rem; font-weight: 600; backdrop-filter: blur(6px); }
+.cs-pills span::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ee7b3b; margin-right: 0.45rem; animation: cspulse 2.2s infinite; }
+@keyframes cspulse { 0% { box-shadow: 0 0 0 0 rgba(238,123,59,.7); } 70% { box-shadow: 0 0 0 9px rgba(238,123,59,0); } 100% { box-shadow: 0 0 0 0 rgba(238,123,59,0); } }
+@keyframes csfade { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.stApp [data-testid="stRadio"] [role="radiogroup"] { background: rgba(255,255,255,0.78); backdrop-filter: blur(12px); border: 1px solid #cfe0f3; box-shadow: 0 10px 30px rgba(10,60,120,0.12); }
+.stApp [data-testid="stRadio"] [role="radiogroup"] > label { transition: background .2s, transform .15s; }
+.stApp [data-testid="stRadio"] [role="radiogroup"] > label:hover { background: rgba(10,98,208,0.09); transform: translateY(-1px); }
+.stApp [data-testid="stRadio"] [role="radiogroup"] > label:has(input:checked) { background: linear-gradient(135deg, #0a62d0, #3a8bff); box-shadow: 0 6px 18px rgba(10,98,208,0.4); }
+.stApp [data-testid="stMetric"] { border: 1px solid #dbe7f5; border-radius: 18px; background: linear-gradient(180deg, #ffffff, #f4f9ff); transition: transform .25s, box-shadow .25s; animation: csfade .6s ease both; }
+.stApp [data-testid="stMetric"]:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(10,60,120,0.16); }
+.stApp [data-testid="stMetricValue"] { background: linear-gradient(100deg, #0a3d8f, #0a62d0); -webkit-background-clip: text; background-clip: text; color: transparent !important; }
+.stApp [data-testid="stExpander"], .stApp [data-testid="stVerticalBlockBorderWrapper"] { border-color: #d6e4f4; box-shadow: 0 8px 26px rgba(10,60,120,0.07); transition: box-shadow .25s, transform .25s; }
+.stApp [data-testid="stVerticalBlockBorderWrapper"]:hover { box-shadow: 0 16px 40px rgba(10,60,120,0.14); }
+.stApp .stButton > button { background: linear-gradient(135deg, #0a62d0, #3a8bff); border: 0; box-shadow: 0 8px 20px rgba(10,98,208,0.32); transition: transform .15s, box-shadow .2s, filter .2s; }
+.stApp .stButton > button:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(10,98,208,0.42); filter: brightness(1.05); }
+.stApp [data-testid="stPlotlyChart"], .stApp [data-testid="stDeckGlJsonChart"] { background: #ffffff; border: 1px solid #dbe7f5; border-radius: 18px; padding: 8px; box-shadow: 0 10px 30px rgba(10,60,120,0.09); }
+.stApp [data-testid="stChatMessage"] { box-shadow: 0 6px 18px rgba(10,60,120,0.07); }
+.stApp .section-accent { background: linear-gradient(90deg, #0a62d0, #ee7b3b); height: 4px; }
+@media (max-width: 700px) { .cs-pills { margin-left: 0; } .cs-top h1 { font-size: 1.5rem !important; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+""", unsafe_allow_html=True)
+st.markdown(
+    '<div class="cs-top">' + ('<img alt="" src="' + _logo_uri() + '">' if _logo_uri() else '') +
+    '<div><h1>Civic<em>Signal</em></h1><p>Hazard-mitigation decision support for Illinois and the Chicago area</p></div>'
+    '<div class="cs-pills"><span>A named official decides</span><span>Sample data</span></div></div>',
+    unsafe_allow_html=True)
+
 # ----------------------------------------------------
 # Open access
 # ----------------------------------------------------
@@ -151,7 +205,7 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
 # ----------------------------------------------------
 _workspace = st.radio(
     "Workspace",
-    ["CivicSignal prioritization", "Hazard dashboard", "Cooling centers & shelters", "Illinois SVI website"],
+    ["Illinois SVI website", "CivicSignal prioritization", "Hazard dashboard", "Cooling centers & shelters"],
     horizontal=True,
     key="workspace",
 )

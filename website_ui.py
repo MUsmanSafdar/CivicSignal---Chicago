@@ -4,7 +4,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 _HERE = Path(__file__).parent
-_PAGE = next((p for p in (_HERE / "assets" / "site.html", _HERE / "site.html") if p.exists()), None)
+_PAGE = next((p for p in (_HERE / "site.html", _HERE / "assets" / "site.html") if p.exists()), None)
 
 
 def render():
