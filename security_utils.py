@@ -206,3 +206,9 @@ This dashboard is a planning-support tool and does **not** replace:
 
 All AI summaries and recommendations are **draft planning support only**.
 """
+
+
+def safe_equals(a: str, b: str) -> bool:
+    """Constant-time string comparison (use for any secret or password check; avoids timing leaks)."""
+    import hmac
+    return hmac.compare_digest(str(a).encode("utf-8"), str(b).encode("utf-8"))

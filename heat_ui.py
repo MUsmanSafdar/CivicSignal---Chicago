@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import chatbot_engine
+from rate_limit import SlidingWindowLimiter, clean_chat_input
 
 _ROOT = Path(__file__).resolve().parent
 DATA = _ROOT / "data" if (_ROOT / "data" / "cooling_centers.csv").exists() else _ROOT
@@ -141,6 +142,11 @@ def render(lang: str = "en"):
                 st.session_state["heat_pending"] = q
         typed = st.chat_input(_t("ui.chat.placeholder", lang), key="heat_input")
         question = typed or st.session_state.pop("heat_pending", None)
+        if question:
+            question = clean_chat_input(question)
+            if question and not st.session_state.setdefault("_heat_limiter", SlidingWindowLimiter()).allow():
+                st.warning(_t("ui.chat.rate_limited", lang, seconds=int(st.session_state["_heat_limiter"].retry_after()) + 1))
+                question = None
         if question:
             _ql = question.lower()
             if ("tip" in _ql and "heat" in _ql) or ("consejo" in _ql and "calor" in _ql):

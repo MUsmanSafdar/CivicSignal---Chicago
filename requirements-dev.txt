@@ -1,0 +1,7 @@
+-r requirements.txt
+pytest>=8,<9
+ruff>=0.6
+mypy>=1.10
+pip-audit>=2.7
+# Optional production monitoring (App Insights); not needed to run or test:
+# azure-monitor-opentelemetry>=1.6

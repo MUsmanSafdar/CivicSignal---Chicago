@@ -15,8 +15,8 @@ def _ensure_layout():
             for f in root.iterdir():
                 if f.is_file() and f.suffix.lower() in exts and not (target / f.name).exists():
                     shutil.copy2(f, target / f.name)
-        except Exception:
-            pass
+        except OSError:  # best effort: a read-only deploy folder is fine
+            pass  # noqa: S110
 _ensure_layout()
 _D = "data/" if Path("data/county_risk.csv").exists() else ""   # works whether or not the data/ folder exists
 from dotenv import load_dotenv
@@ -30,7 +30,7 @@ from security_utils import (
     check_file_size,
     DRAFT_LABEL, PDF_REVIEW_NOTE,
     PROTOTYPE_WARNING, GOVERNANCE_NOTE,
-    MAX_CSV_MB, MAX_PDF_MB, MAX_PDF_CHARS, MAX_PDF_PAGES,
+    MAX_CSV_MB, MAX_PDF_MB, MAX_PDF_PAGES,
     sanitize_text,
 )
 from hazard_taxonomy import normalize_hazard_column
@@ -43,6 +43,8 @@ from safe_stats import safe_mean, format_kpi, safe_pivot, top_per_group, count_b
 import audit_store
 import config as _config
 import identity as _ident
+import observability
+from rate_limit import SlidingWindowLimiter, clean_chat_input
 from i18n import LANGUAGES, normalize_lang, t as _t
 from palette import LOW as GREEN, LIGHT_LOW as LIGHT_GREEN, LIGHT_HIGH as LIGHT_RED, HIGH as RED, RISK_SCALE as RG_SCALE
 
@@ -159,8 +161,8 @@ def _logo_uri():
     for _c in (_P(__file__).parent / "assets" / "logo.png", _P(__file__).parent / "logo.png"):
         try:
             return "data:image/png;base64," + _b64.b64encode(_c.read_bytes()).decode()
-        except Exception:
-            pass
+        except OSError:  # missing or unreadable logo: render without it
+            pass  # noqa: S110
     return ""
 st.markdown("""
 <style>
@@ -216,6 +218,10 @@ try:
 except Exception:  # noqa: BLE001 - older Streamlit or no request context: treat as anonymous
     _headers = {}
 IDENTITY = _ident.resolve_identity(_headers)
+observability.setup_app_insights()
+if IDENTITY and not st.session_state.get("_login_logged"):
+    st.session_state["_login_logged"] = True
+    observability.log_event("login", IDENTITY.actor, _config.tenant_id(), roles=IDENTITY.roles, source=IDENTITY.source)
 BACKEND = st.cache_resource(audit_store.get_backend)()
 LANG = normalize_lang(st.session_state.get("lang", "en"))
 IS_VERIFIED = bool(BACKEND.get_setting(TENANT, "verified_data", False))
@@ -1017,7 +1023,7 @@ else:
         st.divider()
 
         # ── Risk summary ──────────────────────────────────────────────
-        st.markdown(f"**Risk Summary**")
+        st.markdown("**Risk Summary**")
         st.markdown(
             f"{result['county']} County has **:{level_color}[{result['risk_level']}]** "
             f"{result['hazard']} risk (score **{result['risk_score']:.1f} / 5.0**). "
@@ -1654,7 +1660,7 @@ else:
                         )
                     except TaskTimeout:
                         _bar.empty()
-                        raise RuntimeError("The PDF took longer than 120 seconds to read. Try a smaller file or fewer pages.")
+                        raise RuntimeError("The PDF took longer than 120 seconds to read. Try a smaller file or fewer pages.") from None
                     _bar.empty()
 
                     if not pdf_content["text"].strip():
@@ -1695,7 +1701,6 @@ else:
 
 # ── Display summary (Internal View only) ─────────────
 if IS_INTERNAL and st.session_state.get("pdf_summary"):
-    import plotly.graph_objects as _go
 
     _stats           = st.session_state.get("pdf_stats", {})
     _counties_in_pdf = [c for c in _stats.get("counties_mentioned", []) if SCOPE_COUNTIES is None or c in SCOPE_COUNTIES]
@@ -1953,7 +1958,13 @@ else:
         with st.chat_message(_msg["role"]):
             st.markdown(_msg["content"])
 
-    if _user_input := st.chat_input("Ask about shelters, aid, risk levels, emergency contacts, or preparedness…"):
+    _limiter = st.session_state.setdefault("_chat_limiter", SlidingWindowLimiter())
+    _raw_input = st.chat_input(_t("ui.chat.placeholder", LANG))
+    _user_input = clean_chat_input(_raw_input) if _raw_input else ""
+    if _user_input and not _limiter.allow():
+        st.warning(_t("ui.chat.rate_limited", LANG, seconds=int(_limiter.retry_after()) + 1))
+        _user_input = ""
+    if _user_input:
         st.session_state.chat_messages.append({"role": "user", "content": _user_input})
         with st.chat_message("user"):
             st.markdown(_user_input)

@@ -9,6 +9,7 @@ import civicsignal as cs
 import decision_packet
 import funding_watch
 import identity as ident
+import observability
 
 
 CSS = """
@@ -312,6 +313,8 @@ def _decision_box(S, ctx: Ctx, p, pid, e, weights, budget) -> None:
         if col.button(label, key=f"cs_{action}_{pid}", disabled=(not allowed) or (action == "approved" and not can_approve)) and allowed:
             ok, msg = cs.decide(S, pid, action, note, ctx.actor_email, weights, budget)
             if ok:
+                observability.log_event(f"project.decision.{action}", ctx.identity.actor if ctx.identity else "", ctx.tenant,
+                                        eligibility=e["overall"] if e else "not_checked")
                 _persist(ctx, S)
             st.session_state["cs_msg"] = msg
             st.rerun()
@@ -337,10 +340,14 @@ def _rules(S, ctx: Ctx):
                     st.success(f"Approved for use by {pub['by']} on {pub['at']}")
                 elif st.button("Approve this rule for use", key=f"cs_pub_{r['id']}", disabled=not can_publish) and can_publish:
                     cs.publish_rules(S, [r["id"]], ctx.actor_email)
+                    observability.log_event("rule.published", ctx.identity.actor if ctx.identity else "", ctx.tenant, rule=r["id"])
                     _persist(ctx, S)
                     st.rerun()
     if len(S["published"]) < len(cs.RULES) and st.button("Approve all rules", disabled=not can_publish) and can_publish:
+        pending = [r["id"] for r in cs.RULES if r["id"] not in S["published"]]
         cs.publish_rules(S, [r["id"] for r in cs.RULES], ctx.actor_email)
+        for rid in pending:
+            observability.log_event("rule.published", ctx.identity.actor if ctx.identity else "", ctx.tenant, rule=rid)
         _persist(ctx, S)
         st.rerun()
 

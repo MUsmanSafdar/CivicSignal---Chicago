@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.0.0 (Phase 0 and Phase 1; Phase 2 packaging follows)
+## v1.0.0
 
 ### Added
 - Persistent audit store (SQLite for development, Azure Table Storage for production) with per-tenant workspace state.
@@ -13,6 +13,10 @@
 - English and Spanish public chatbot and captions (`locales/`), plus Spanish intent keywords.
 - `TERMS.md`, `PRIVACY.md`, `DISCLAIMER.md`, `DATA_SOURCES.md`, a UI footer and the sample-data banner logic.
 - Fourth workspace: Illinois SVI website.
+
+- Chat rate limit and input cleaning, constant-time compare helper, structured JSON logs and an optional Application Insights hook.
+- GitHub Actions CI (ruff, mypy, pytest, pip-audit), `pyproject.toml`, `requirements-dev.txt`, `.env.example`, `TRACEABILITY.md`.
+- Cooling-centers page: star markers and a one-colour heat-wave need map with a ranking chart.
 
 ### Changed
 - Admin password replaced by roles. `ADMIN_PASSWORD` is no longer read.

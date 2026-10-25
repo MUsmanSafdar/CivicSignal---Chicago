@@ -26,7 +26,7 @@ def load_locale(lang: str) -> dict[str, Any]:
     return data if isinstance(data, dict) else {}
 
 
-class _Safe(dict):  # type: ignore[type-arg]
+class _Safe(dict):  # type: ignore[type-arg,unused-ignore]
     def __missing__(self, key: str) -> str:
         return "{" + key + "}"
 

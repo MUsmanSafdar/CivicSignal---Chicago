@@ -32,6 +32,7 @@ Audit actor = `user:<verified email>`. It is never typed text.
 | `ROLE_ADMINS`, `ROLE_OFFICIALS`, `ROLE_REVIEWERS` | Comma-separated emails granted that role (in addition to token roles) | empty |
 | `TRUST_AUTH_HEADERS` | `1` to trust Easy Auth headers when `WEBSITE_AUTH_ENABLED` is not set | unset |
 | `ALLOWED_EMAILS`, `DEV_USER_EMAIL` | Local-development sign-in only. `DEV_USER_EMAIL` must be listed in `ALLOWED_EMAILS`. **Never set in production.** | unset |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Turns on Azure Application Insights (also `pip install azure-monitor-opentelemetry`) | unset, so logs go to stdout only |
 | `SCM_DO_BUILD_DURING_DEPLOYMENT` | `true` so App Service installs requirements | |
 
 `ADMIN_PASSWORD` is gone. Admin access now requires a signed-in identity with the admin role.
@@ -54,10 +55,12 @@ The hash chain makes edits **detectable**. It does not make them **impossible**:
 - Back up the table account (geo-redundant storage).
 
 ## 6. Operations
-- Logs: App Service log stream; Phase 2 adds an optional Application Insights hook.
+- Logs: one JSON line per login, rule publication and decision on the `civicsignal` logger (App Service log stream). Lines hold the actor email and ids only, never reason text. Set `APPLICATIONINSIGHTS_CONNECTION_STRING` and install `azure-monitor-opentelemetry` to send them to Application Insights.
 - Funding Watch calls `api.grants.gov` from the App Service; allow outbound HTTPS to it.
-- Dependency scanning: `pip-audit -r requirements.txt` (Phase 2 adds it to CI).
-- Rate limiting for chat input: put Azure Front Door / API Management in front, or limit per session (Phase 2).
+- Dependency scanning: `pip-audit -r requirements.txt`. CI runs it (report only) on every push.
+- Rate limiting: each browser session is limited to 12 chat messages per minute and 500 characters per message (`rate_limit.py`). That does not stop a determined client opening many sessions, so also put Azure Front Door (WAF rate-limit rule) in front of the App Service.
+- Secrets: none in code. `.env` is git-ignored; use Key Vault references in App Service.
+- Security checklist: Easy Auth on; `ALLOWED_EMAILS`/`DEV_USER_EMAIL` unset; storage shared-key access restricted; HTTPS only; minimum TLS 1.2.
 
 ## 7. Microsoft-only AI rule
 No Claude, direct OpenAI, DeepSeek or other non-Microsoft AI calls. If AI is added later it must use Azure OpenAI or Azure AI services, secrets in Key Vault, and a person must still make every approval, hold and publication.

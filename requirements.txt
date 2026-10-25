@@ -1,8 +1,11 @@
-streamlit>=1.37
-pandas>=2.0
-plotly>=5.18,<7
-python-dotenv>=1.0
-pdfplumber>=0.10
-openpyxl>=3.1
-reportlab>=4.0
-azure-data-tables>=12.5
+# Runtime dependencies. Ranges are bounded so a new major release cannot break a deploy silently.
+# For byte-for-byte reproducible installs generate an exact lock file from a working environment:
+#   pip install -r requirements.txt && pip freeze > requirements.lock   (CI installs from requirements.lock when present)
+streamlit>=1.50,<2
+pandas>=2.2,<4
+plotly>=5.24,<7
+python-dotenv>=1.0,<2
+pdfplumber>=0.11,<0.12
+openpyxl>=3.1,<4
+reportlab>=4.2,<5
+azure-data-tables>=12.5,<13

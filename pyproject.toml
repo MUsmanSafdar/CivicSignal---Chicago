@@ -1,0 +1,30 @@
+[tool.ruff]
+line-length = 160
+target-version = "py311"
+extend-exclude = ["site.html", ".mypy_cache"]
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "S"]
+ignore = [
+    "E701", "E702", "E401",   # legacy one-line style in older modules; new code does not use it
+    "S101",                    # assert is fine in tests
+    "S311",                    # random is not used for security here
+    "B008", "E501", "B905",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"app.py" = ["E402", "S608"]          # Streamlit needs set_page_config and env loading before some imports
+"heat_ui.py" = ["E402"]
+"tests/*" = ["S", "B"]
+"conftest.py" = ["E402"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_ignores = true
+files = ["audit_store.py", "config.py", "identity.py", "decision_packet.py", "funding_watch.py", "palette.py", "i18n.py",
+         "heat_need.py", "rate_limit.py", "observability.py", "hazard_taxonomy.py", "analysis.py", "pdf_tasks.py", "safe_stats.py"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -p no:cacheprovider"

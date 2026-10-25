@@ -27,7 +27,9 @@ Fetcher = Callable[[str], dict[str, Any]]
 def default_fetcher(keyword: str, timeout: float = 20.0) -> dict[str, Any]:
     """POST one keyword search to Grants.gov and return the decoded JSON."""
     body = json.dumps({"keyword": keyword, "oppStatuses": "forecasted|posted", "rows": 50}).encode()
-    req = urllib.request.Request(API_URL, data=body, headers={"Content-Type": "application/json"}, method="POST")
+    if not API_URL.startswith("https://"):
+        raise ValueError("Grants.gov URL must be https")
+    req = urllib.request.Request(API_URL, data=body, headers={"Content-Type": "application/json"}, method="POST")  # noqa: S310 - fixed https URL
     with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 - fixed https URL
         data = json.loads(resp.read().decode("utf-8"))
     if not isinstance(data, dict):
