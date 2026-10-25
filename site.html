@@ -502,6 +502,8 @@ function init(){
 }
 init();
 
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href^="#"]');if(!a)return;var id=a.getAttribute('href').slice(1);var t=id?document.getElementById(id):document.body;if(!t)return;e.preventDefault();t.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'})});
+
 (function(){
   var rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
   document.querySelectorAll('#heroMap path').forEach(function(p,i){p.style.animationDelay=(i*14)+'ms'});
