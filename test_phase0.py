@@ -179,7 +179,7 @@ def test_empty_and_nan_frames_do_not_raise():
 def test_capacity_frame_is_defined_before_the_county_analysis_uses_it():
     src = (ROOT / "app.py").read_text(encoding="utf-8")
     assert src.index("capacity_df = normalize_hazard_column(capacity_df)") < src.index("_rule_based_risk_analysis(county_row_for_ai")
-    assert src.index("risk_all = risk_df.copy()") < src.index("risk_df = risk_df[risk_df[\"county\"].isin(CHICAGO_COUNTIES)]")
+    assert src.index("risk_all = risk_df.copy()") < src.index("risk_df = _config.scope_frame(risk_df, SCOPE_COUNTIES)")
 
 
 def test_chat_survives_empty_frames():
