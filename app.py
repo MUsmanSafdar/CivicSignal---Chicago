@@ -33,6 +33,13 @@ from security_utils import (
     MAX_CSV_MB, MAX_PDF_MB, MAX_PDF_CHARS, MAX_PDF_PAGES,
     sanitize_text,
 )
+from hazard_taxonomy import normalize_hazard_column
+from analysis import (
+    INTERPRETATION as _INTERPRETATION,
+    rule_based_risk_analysis as _rule_based_risk_analysis,
+)
+from pdf_tasks import run_with_timeout, TaskTimeout, DEFAULT_TIMEOUT_S
+from safe_stats import safe_mean, format_kpi, safe_pivot, top_per_group, count_by, has_columns
 
 # ----------------------------------------------------
 # Scope and palette
@@ -160,11 +167,11 @@ html, body, .stApp, .stApp p, .stApp li, .stApp label, .stApp span, .stApp input
 .cs-top::after { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 38px 38px; -webkit-mask-image: linear-gradient(90deg, transparent 30%, #000); mask-image: linear-gradient(90deg, transparent 30%, #000); pointer-events: none; }
 .cs-top > * { position: relative; z-index: 1; }
 .cs-top img { width: 58px; height: 58px; border-radius: 50%; background: #fff; padding: 5px; box-shadow: 0 0 0 4px rgba(90,166,255,0.35); }
-.cs-top h1 { margin: 0 !important; color: #ffffff !important; font-size: 2rem !important; line-height: 1.05; }
-.cs-top h1 em { font-style: normal; background: linear-gradient(100deg, #7db8ff, #ffb26b); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.cs-top p { margin: 0.25rem 0 0 !important; color: #b4c6dc !important; font-size: 0.98rem; }
+.stApp .cs-top h1 { margin: 0 !important; color: #ffffff !important; -webkit-text-fill-color: #ffffff; font-size: 2rem !important; line-height: 1.05; }
+.stApp .cs-top h1 em { -webkit-text-fill-color: transparent; font-style: normal; background: linear-gradient(100deg, #7db8ff, #ffb26b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.stApp .cs-top p { margin: 0.25rem 0 0 !important; color: #b4c6dc !important; font-size: 0.98rem; }
 .cs-pills { margin-left: auto; display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.cs-pills span { color: #eaf1fa !important; border: 1px solid rgba(255,255,255,0.28); background: rgba(255,255,255,0.08); border-radius: 99px; padding: 0.35rem 0.85rem; font-size: 0.82rem; font-weight: 600; backdrop-filter: blur(6px); }
+.stApp .cs-pills span { color: #eaf1fa !important; border: 1px solid rgba(255,255,255,0.28); background: rgba(255,255,255,0.08); border-radius: 99px; padding: 0.35rem 0.85rem; font-size: 0.82rem; font-weight: 600; backdrop-filter: blur(6px); }
 .cs-pills span::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ee7b3b; margin-right: 0.45rem; animation: cspulse 2.2s infinite; }
 @keyframes cspulse { 0% { box-shadow: 0 0 0 0 rgba(238,123,59,.7); } 70% { box-shadow: 0 0 0 9px rgba(238,123,59,0); } 100% { box-shadow: 0 0 0 0 rgba(238,123,59,0); } }
 @keyframes csfade { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
@@ -261,9 +268,15 @@ def clean_county_name(name):
 
 
 def load_county_geojson(path=_D + "illinois_counties.geojson"):
-    """Load Illinois county GeoJSON safely."""
+    """Load Illinois county GeoJSON safely (parsed once per file version via st.cache_resource)."""
     if not os.path.exists(path):
         return None
+    return _parse_county_geojson(path, os.path.getmtime(path))
+
+
+@st.cache_resource(show_spinner=False)
+def _parse_county_geojson(path, mtime):
+    """Cached parser: the mtime argument invalidates the cache when the file changes."""
 
     try:
         with open(path, "r", encoding="utf-8") as file:
@@ -416,7 +429,8 @@ if os.path.exists(actions_path):
 else:
     actions_df = sample_actions_df
 
-risk_df = add_coordinates(risk_df)
+risk_df = add_coordinates(normalize_hazard_column(risk_df))
+actions_df = normalize_hazard_column(actions_df)
 
 # ----------------------------------------------------
 # Sidebar: data upload
@@ -505,7 +519,7 @@ if uploaded_risk_file is not None:
         _df = pd.read_csv(uploaded_risk_file)
         _ok, _err = validate_csv(_df, "county_risk")
         if _ok:
-            _df = apply_risk_csv_rules(_df)
+            _df = normalize_hazard_column(apply_risk_csv_rules(_df))
             risk_df = add_coordinates(_df)
             st.sidebar.success("County risk data uploaded and validated.")
         else:
@@ -516,7 +530,7 @@ if uploaded_actions_file is not None:
         _df = pd.read_csv(uploaded_actions_file)
         _ok, _err = validate_csv(_df, "mitigation_actions")
         if _ok:
-            actions_df = _df
+            actions_df = normalize_hazard_column(_df)
             st.sidebar.success("Mitigation actions data uploaded and validated.")
         else:
             st.sidebar.error(f"Mitigation actions CSV rejected: {_err}")
@@ -544,6 +558,7 @@ selected_regions = st.sidebar.multiselect(
 # ----------------------------------------------------
 # Scope everything to the Chicago-area counties
 # ----------------------------------------------------
+risk_all = risk_df.copy()   # unfiltered, used by the Hazard Assistant (Phase 0.5)
 risk_df = risk_df[risk_df["county"].isin(CHICAGO_COUNTIES)].copy()
 
 # ----------------------------------------------------
@@ -585,22 +600,20 @@ with col2:
     st.metric("High / Very High Risk", len(high_counties))
 
 with col3:
-    avg_risk = filtered_risk["risk_score"].mean()
-    st.metric("Average Risk Score", round(avg_risk, 2) if not pd.isna(avg_risk) else "N/A")
+    st.metric("Average Risk Score", format_kpi(safe_mean(filtered_risk, "risk_score")))
 
 with col4:
-    avg_svi = filtered_risk["svi_score"].mean()
-    st.metric("Average SVI Score", round(avg_svi, 2) if not pd.isna(avg_svi) else "N/A")
+    st.metric("Average SVI Score", format_kpi(safe_mean(filtered_risk, "svi_score")))
 
 # ----------------------------------------------------
 # Hazard overview: every hazard for every county
 # ----------------------------------------------------
 
 st.subheader("Hazard Overview: all hazards by county")
-_ov = risk_df[risk_df["region"].isin(selected_regions)].pivot_table(
-    index="county", columns="hazard", values="risk_score", aggfunc="max"
-)
-if not _ov.empty:
+_ov = safe_pivot(risk_df[risk_df["region"].isin(selected_regions)], "county", "hazard", "risk_score", "max")
+if _ov.empty:
+    st.info("No hazard data for the selected regions.")
+else:
     _ov = _ov.loc[_ov.max(axis=1).sort_values(ascending=False).index]
     _ov_fig = px.imshow(
         _ov,
@@ -614,7 +627,7 @@ if not _ov.empty:
     _ov_fig.update_layout(paper_bgcolor="#ffffff", plot_bgcolor="#ffffff", font=dict(color="#1d1d1f", family="Inter, sans-serif"), margin=dict(l=10, r=10, t=10, b=10))
     _ov_fig.update_xaxes(side="top", tickangle=0)
     st.plotly_chart(_ov_fig, use_container_width=True)
-    _top = risk_df[risk_df["region"].isin(selected_regions)].sort_values("risk_score", ascending=False).groupby("county").head(1)
+    _top = top_per_group(risk_df[risk_df["region"].isin(selected_regions)], "county", "risk_score")
     st.caption("Highest hazard per county: " + "; ".join(f"{r.county} {r.hazard} ({r.risk_score:.1f})" for r in _top.itertuples()))
 
 # ----------------------------------------------------
@@ -837,215 +850,10 @@ st.download_button(
 
 st.subheader("Dashboard Interpretation")
 
-_INTERPRETATION = {
-    "Flood": "Prioritize flood mitigation where high exposure overlaps with high social vulnerability: stormwater upgrades, buyouts and elevation, floodplain restoration and better warning.",
-    "Tornado": "Prioritize safe rooms and warning coverage where mobile-home parks, schools and care facilities have little shelter access.",
-    "Severe Storm": "Prioritize backup power and hardening for critical facilities, and check outage exposure for people who rely on powered medical equipment.",
-    "Winter Storm": "Prioritize warming-center capacity, road clearing and welfare checks for older adults and people without reliable heat.",
-    "Extreme Heat": "Prioritize cooling centers, outreach and tree canopy where high temperatures overlap with older adults, renters and low-income households.",
-    "Drought": "Drought is a slow-onset hazard here. Prioritize water-supply planning and grass-fire readiness at the county edges.",
-    "Earthquake": "Earthquake risk is low across the area but not zero. Focus on assessing critical facilities and checking building-code compliance.",
-}
 st.info(_INTERPRETATION.get(
     selected_hazard,
     "This dashboard helps identify where hazard risk, social vulnerability, and mitigation needs overlap.",
 ))
-# ----------------------------------------------------
-# County Risk Analysis (rule-based, no AI)
-# ----------------------------------------------------
-
-_HAZARD_ACTIONS = {
-    "Flood": [
-        "Update floodplain maps and enforce current building setbacks.",
-        "Install or upgrade early-warning stream gauges in high-risk corridors.",
-        "Strengthen stormwater infrastructure in low-lying areas.",
-    ],
-    "Tornado": [
-        "Audit shelter availability and capacity county-wide.",
-        "Test and expand outdoor warning siren coverage.",
-        "Establish rapid shelter-in-place guidance for mobile home communities.",
-    ],
-    "Earthquake": [
-        "Assess structural vulnerability of critical facilities (schools, hospitals, bridges).",
-        "Update local building codes to current seismic standards.",
-        "Train first-responders in post-earthquake rapid damage assessment.",
-    ],
-    "Severe Storm": [
-        "Harden power distribution infrastructure against wind damage.",
-        "Pre-position emergency supplies at county distribution points.",
-        "Review mutual-aid agreements with adjacent counties.",
-    ],
-    "Winter Storm": [
-        "Audit road salt stockpiles and plow equipment readiness before October.",
-        "Identify and pre-register vulnerable residents for wellness checks.",
-        "Coordinate with utilities on outage response protocols.",
-    ],
-    "Extreme Heat": [
-        "Open and publicize cooling centers; extend hours during heat advisories.",
-        "Run welfare checks and outreach for older adults and people living alone.",
-        "Expand tree canopy and cool surfaces in the hottest neighborhoods.",
-    ],
-    "Drought": [
-        "Enact tiered water-use restrictions at defined supply thresholds.",
-        "Engage agricultural stakeholders on irrigation efficiency programs.",
-        "Map alternative water supply sources for critical infrastructure.",
-    ],
-}
-
-def _rule_based_risk_analysis(county_row: pd.Series, action_rows: pd.DataFrame) -> dict:
-    county      = county_row.get("county", "This county")
-    hazard      = county_row.get("hazard", "Unknown")
-    risk_score  = float(county_row.get("risk_score", 0))
-    svi         = float(county_row.get("svi_score", county_row.get("svi", 0)))
-    risk_level  = county_row.get("risk_level", "Unknown")
-
-    if svi >= 0.75:
-        svi_label  = "Very High"
-        svi_detail = "large share of residents face compounding hardship"
-        svi_action = "Prioritize equity-focused outreach, multilingual warnings, and direct assistance."
-    elif svi >= 0.50:
-        svi_label  = "High"
-        svi_detail = "elevated vulnerability across income, age, and housing dimensions"
-        svi_action = "Ensure warning systems reach seniors, renters, and low-income households."
-    elif svi >= 0.25:
-        svi_label  = "Moderate"
-        svi_detail = "moderate vulnerability — some segments need targeted support"
-        svi_action = "Maintain standard community outreach and public education programs."
-    else:
-        svi_label  = "Low"
-        svi_detail = "community capacity is relatively strong"
-        svi_action = "Focus on infrastructure hardening; residents generally able to self-prepare."
-
-    if svi >= 0.50 and risk_score >= 3.0:
-        compound = (
-            f"The overlap of {risk_level.lower()} hazard exposure and {svi_label.lower()} social vulnerability "
-            f"means residents of {county} County have reduced capacity to prepare, respond, and recover. "
-            f"{hazard} impacts here are likely to be disproportionate and longer-lasting."
-        )
-    elif svi >= 0.50:
-        compound = (
-            f"While {hazard} risk is {risk_level.lower()}, the {svi_label.lower()} SVI means affected residents "
-            f"may require targeted support to recover without prolonged hardship."
-        )
-    elif risk_score >= 3.0:
-        compound = (
-            f"{county} County faces significant {hazard} exposure. Community adaptive capacity is adequate "
-            f"but infrastructure and response systems require continued investment."
-        )
-    else:
-        compound = (
-            f"{county} County's {hazard} risk is currently {risk_level.lower()} with manageable social "
-            f"vulnerability. Routine monitoring and preparedness activities are appropriate."
-        )
-
-    base_actions = _HAZARD_ACTIONS.get(hazard, [
-        "Review county hazard mitigation plan for this hazard type.",
-        "Coordinate with IEMA on resource pre-positioning.",
-        "Update public communication and alert systems.",
-    ])
-    priority_actions = base_actions if risk_score >= 3.0 else base_actions[:2]
-
-    efforts = []
-    if not action_rows.empty:
-        for _, row in action_rows.head(3).iterrows():
-            effort  = row.get("mitigation_effort", "Mitigation effort")
-            budget  = float(row.get("budget_allocated", 0))
-            spent   = float(row.get("amount_spent", 0))
-            pct     = (spent / budget * 100) if budget > 0 else 0
-            people  = int(row.get("people_affected", 0))
-            efforts.append({
-                "effort": effort,
-                "budget": budget,
-                "spent": spent,
-                "pct": pct,
-                "people": people,
-            })
-
-    return {
-        "county": county,
-        "hazard": hazard,
-        "risk_score": risk_score,
-        "risk_level": risk_level,
-        "svi": svi,
-        "svi_label": svi_label,
-        "svi_detail": svi_detail,
-        "svi_action": svi_action,
-        "compound": compound,
-        "priority_actions": priority_actions,
-        "efforts": efforts,
-    }
-
-
-st.subheader("County Risk Analysis")
-
-if filtered_risk.empty:
-    st.warning("No county data available for the selected hazard and region.")
-else:
-    selected_county_for_ai = st.selectbox(
-        "Select county",
-        sorted(filtered_risk["county"].dropna().unique()),
-        key="risk_analysis_county",
-    )
-
-    county_row_for_ai = filtered_risk[filtered_risk["county"] == selected_county_for_ai]
-
-    if not county_row_for_ai.empty:
-        result = _rule_based_risk_analysis(
-            county_row_for_ai.iloc[0],
-            filtered_actions[filtered_actions["county"] == selected_county_for_ai]
-            if (not filtered_actions.empty and "county" in filtered_actions.columns) else filtered_actions,
-        )
-
-        # ── Header metrics ────────────────────────────────────────────
-        m1, m2, m3, m4 = st.columns(4)
-        level_color = {"Low": "green", "Medium": "orange", "High": "red", "Very High": "red"}.get(result["risk_level"], "gray")
-        m1.metric("Risk Level",  result["risk_level"])
-        m2.metric("Risk Score",  f"{result['risk_score']:.1f} / 5.0")
-        m3.metric("SVI",         f"{result['svi']:.2f}")
-        m4.metric("Vulnerability", result["svi_label"])
-
-        st.divider()
-
-        # ── Risk summary ──────────────────────────────────────────────
-        st.markdown(f"**Risk Summary**")
-        st.markdown(
-            f"{result['county']} County has **:{level_color}[{result['risk_level']}]** "
-            f"{result['hazard']} risk (score **{result['risk_score']:.1f} / 5.0**). "
-            f"Social Vulnerability Index: **{result['svi']:.2f}** — {result['svi_detail']}."
-        )
-
-        # ── Why it matters ────────────────────────────────────────────
-        st.markdown("**Why This Matters**")
-        st.markdown(result["compound"])
-
-        # ── SVI guidance ──────────────────────────────────────────────
-        st.markdown("**Equity Consideration**")
-        st.markdown(result["svi_action"])
-
-        # ── Priority actions ──────────────────────────────────────────
-        st.markdown("**Priority Mitigation Actions**")
-        for action in result["priority_actions"]:
-            st.markdown(f"- {action}")
-
-        # ── Existing mitigation efforts ───────────────────────────────
-        if result["efforts"]:
-            st.markdown("**Current Mitigation Efforts**")
-            for e in result["efforts"]:
-                spent_pct = e["pct"]
-                bar_color = "green" if spent_pct >= 75 else "orange" if spent_pct >= 40 else "red"
-                st.markdown(
-                    f"- **{e['effort']}** — "
-                    f"Budget: ${e['budget']:,.0f} · "
-                    f"Spent: ${e['spent']:,.0f} (:{bar_color}[{spent_pct:.0f}%]) · "
-                    f"{e['people']:,} people affected"
-                )
-
-        with st.expander("Raw source data"):
-            st.dataframe(
-                county_row_for_ai.drop(columns=["latitude", "longitude"], errors="ignore"),
-                use_container_width=True,
-            )
-
 # ----------------------------------------------------
 # Load resource capacity data
 # ----------------------------------------------------
@@ -1097,7 +905,7 @@ if uploaded_capacity_file is not None:
         _df = pd.read_csv(uploaded_capacity_file)
         _ok, _err = validate_csv(_df, "county_capacity")
         if _ok:
-            capacity_df = apply_capacity_csv_rules(_df)
+            capacity_df = normalize_hazard_column(apply_capacity_csv_rules(_df))
             st.sidebar.success("Capacity data uploaded and validated.")
         else:
             st.sidebar.error(f"Capacity CSV rejected: {_err}")
@@ -1107,13 +915,89 @@ if uploaded_complaints_file is not None:
         _df = pd.read_csv(uploaded_complaints_file)
         _ok, _err = validate_csv(_df, "complaints")
         if _ok:
-            complaints_raw = _df
+            complaints_raw = normalize_hazard_column(_df)
             st.sidebar.success("Complaints data uploaded and validated.")
         else:
             st.sidebar.error(f"Complaints CSV rejected: {_err}")
 
+capacity_df = normalize_hazard_column(capacity_df)
+complaints_raw = normalize_hazard_column(complaints_raw)
+# Unfiltered copies feed the Hazard Assistant so it can answer for any county (Phase 0.5).
+capacity_all = capacity_df.copy()
+complaints_all = complaints_raw.copy()
 capacity_df = capacity_df[capacity_df["county"].isin(CHICAGO_COUNTIES)].copy()
 complaints_raw = complaints_raw[complaints_raw["county"].isin(CHICAGO_COUNTIES)].copy()
+
+# ----------------------------------------------------
+# County Risk Analysis (rule-based, no AI)
+# ----------------------------------------------------
+
+st.subheader("County Risk Analysis")
+
+if filtered_risk.empty:
+    st.warning("No county data available for the selected hazard and region.")
+else:
+    selected_county_for_ai = st.selectbox(
+        "Select county",
+        sorted(filtered_risk["county"].dropna().unique()),
+        key="risk_analysis_county",
+    )
+
+    county_row_for_ai = filtered_risk[filtered_risk["county"] == selected_county_for_ai]
+
+    if not county_row_for_ai.empty:
+        result = _rule_based_risk_analysis(county_row_for_ai.iloc[0], capacity_df)
+
+        # ── Header metrics ────────────────────────────────────────────
+        m1, m2, m3, m4 = st.columns(4)
+        level_color = {"Low": "green", "Medium": "orange", "High": "red", "Very High": "red"}.get(result["risk_level"], "gray")
+        m1.metric("Risk Level",  result["risk_level"])
+        m2.metric("Risk Score",  f"{result['risk_score']:.1f} / 5.0")
+        m3.metric("SVI",         f"{result['svi']:.2f}")
+        m4.metric("Vulnerability", result["svi_label"])
+
+        st.divider()
+
+        # ── Risk summary ──────────────────────────────────────────────
+        st.markdown(f"**Risk Summary**")
+        st.markdown(
+            f"{result['county']} County has **:{level_color}[{result['risk_level']}]** "
+            f"{result['hazard']} risk (score **{result['risk_score']:.1f} / 5.0**). "
+            f"Social Vulnerability Index: **{result['svi']:.2f}** — {result['svi_detail']}."
+        )
+
+        # ── Why it matters ────────────────────────────────────────────
+        st.markdown("**Why This Matters**")
+        st.markdown(result["compound"])
+
+        # ── SVI guidance ──────────────────────────────────────────────
+        st.markdown("**Equity Consideration**")
+        st.markdown(result["svi_action"])
+
+        # ── Priority actions ──────────────────────────────────────────
+        st.markdown("**Priority Mitigation Actions**")
+        for action in result["priority_actions"]:
+            st.markdown(f"- {action}")
+
+        # ── Existing mitigation efforts ───────────────────────────────
+        if result["efforts"]:
+            st.markdown("**Current Mitigation Efforts**")
+            for e in result["efforts"]:
+                spent_pct = e["pct"]
+                bar_color = "green" if spent_pct >= 75 else "orange" if spent_pct >= 40 else "red"
+                st.markdown(
+                    f"- **{e['effort']}** — "
+                    f"Budget: ${e['budget']:,.0f} · "
+                    f"Spent: ${e['spent']:,.0f} (:{bar_color}[{spent_pct:.0f}%]) · "
+                    f"{e['people']:,} people affected"
+                )
+
+        with st.expander("Raw source data"):
+            st.dataframe(
+                county_row_for_ai.drop(columns=["latitude", "longitude"], errors="ignore"),
+                use_container_width=True,
+            )
+
 
 # ----------------------------------------------------
 # Resource Capacity Section
@@ -1227,11 +1111,7 @@ with r1_right:
 r2_left, r2_right = st.columns(2)
 
 with r2_left:
-    complaint_county = (
-        complaints_raw.groupby(["county", "status"])
-        .size()
-        .reset_index(name="count")
-    )
+    complaint_county = count_by(complaints_raw, ["county", "status"])
     if not complaint_county.empty:
         complaint_colors = {"Open": RED, "Resolved": GREEN}
         comp_fig = px.bar(
@@ -1254,11 +1134,7 @@ with r2_left:
         st.plotly_chart(comp_fig, width="stretch")
 
 with r2_right:
-    category_counts = (
-        complaints_raw.groupby(["category", "status"])
-        .size()
-        .reset_index(name="count")
-    )
+    category_counts = count_by(complaints_raw, ["category", "status"])
     if not category_counts.empty:
         cat_fig = px.bar(
             category_counts,
@@ -1281,11 +1157,9 @@ with r2_right:
 
 # Row 3: Priority heatmap ────────────────────────────
 priority_order = ["Critical", "High", "Medium", "Low"]
-priority_pivot = (
-    complaints_raw[complaints_raw["status"] == "Open"]
-    .groupby(["county", "priority"])
-    .size()
-    .reset_index(name="count")
+priority_pivot = count_by(
+    complaints_raw[complaints_raw["status"] == "Open"] if has_columns(complaints_raw, ["status"]) else complaints_raw.iloc[0:0],
+    ["county", "priority"],
 )
 
 if not priority_pivot.empty:
@@ -1478,7 +1352,7 @@ else:
     import pdfplumber as _pdfplumber
 
     def _extract_pdf(uploaded_file) -> dict:
-        raw = uploaded_file.read()
+        raw = uploaded_file if isinstance(uploaded_file, (bytes, bytearray)) else uploaded_file.read()
         buf = _io.BytesIO(raw)
         text_pages, tables = [], []
         with _pdfplumber.open(buf) as pdf:
@@ -1712,7 +1586,18 @@ else:
                 error_slot  = st.empty()
                 try:
                     status_slot.info("Extracting text and tables from PDF…")
-                    pdf_content = _extract_pdf(uploaded_pdf)
+                    _pdf_bytes = uploaded_pdf.read()
+                    _bar = st.progress(0.0, text="Reading PDF (runs in the background, 120 second limit)…")
+                    try:
+                        pdf_content = run_with_timeout(
+                            lambda: _extract_pdf(_pdf_bytes),
+                            timeout_s=DEFAULT_TIMEOUT_S,
+                            on_tick=lambda f: _bar.progress(f, text="Reading PDF (runs in the background, 120 second limit)…"),
+                        )
+                    except TaskTimeout:
+                        _bar.empty()
+                        raise RuntimeError("The PDF took longer than 120 seconds to read. Try a smaller file or fewer pages.")
+                    _bar.empty()
 
                     if not pdf_content["text"].strip():
                         status_slot.empty()
@@ -1743,6 +1628,7 @@ else:
                 except Exception as _pdf_err:
                     status_slot.empty()
                     error_slot.error(
+                        str(_pdf_err) if isinstance(_pdf_err, RuntimeError) else
                         "PDF could not be processed. Ensure the file is a valid, "
                         "non-password-protected PDF with selectable text."
                     )
@@ -2017,9 +1903,9 @@ else:
         with st.chat_message("assistant"):
             _reply = _hazard_chat(
                 user_message=_user_input,
-                risk_df=risk_df,
-                capacity_df=capacity_df,
-                complaints_df=complaints_raw,
+                risk_df=risk_all,
+                capacity_df=capacity_all,
+                complaints_df=complaints_all,
             )
             st.markdown(_reply)
 

@@ -120,9 +120,26 @@ def evaluate_project(p, published, today=None):
 
 
 # ---------------------------------------------------------------- scoring
+class WeightsError(ValueError):
+    """Raised when the criteria weights cannot produce a meaningful ranking."""
+
+
+def total_weight(weights):
+    """Sum of the weights (missing or non-numeric values count as zero)."""
+    return sum(float(v) for v in weights.values() if isinstance(v, (int, float)))
+
+
+def weights_valid(weights):
+    """True when the total weight is at least 1, the minimum for a meaningful ranking."""
+    return total_weight(weights) >= 1
+
+
 def score_of(p, weights):
-    tw = sum(weights.values())
-    return sum(p[k] * weights[k] for k, *_ in CRITERIA) / tw if tw else 0.0
+    """Weighted score for a project. Raises WeightsError when the total weight is below 1."""
+    tw = total_weight(weights)
+    if tw < 1:
+        raise WeightsError("Total weight must be at least 1. Raise at least one criterion weight to rank projects.")
+    return sum(p[k] * weights[k] for k, *_ in CRITERIA) / tw
 
 
 def ranked(projects, weights, published, today=None):
@@ -212,6 +229,8 @@ def publish_rules(st_, ids, reviewer):
 
 def decide(st_, project_id, action, note, actor, weights, budget):
     p = next(x for x in st_["projects"] if x["id"] == project_id)
+    if not weights_valid(weights):
+        return False, "Set at least one criterion weight above 0 before deciding, so the ranking on record is meaningful."
     if not note.strip():
         return False, "Add a short reason first. The decision stays with you, and the record shows why."
     e = evaluate_project(p, st_["published"])

@@ -13,44 +13,67 @@ import re
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
-from functools import lru_cache
+import threading
+from typing import Callable
 
 _ROOT = Path(__file__).resolve().parent
 _DATA_DIR = _ROOT / "data" if (_ROOT / "data" / "cooling_centers.csv").exists() else _ROOT
 
-# ── Reference table loader (cached per session) ───────────────────────────────
+# ── Reference table loader (cache keyed on file mtime + size, Phase 0.6) ──────
 
-@lru_cache(maxsize=1)
+_CACHE: dict[str, tuple[tuple[int, int], pd.DataFrame]] = {}
+_CACHE_LOCK = threading.Lock()
+
+
+def _read_cached(name: str, reader: Callable[[Path], pd.DataFrame]) -> pd.DataFrame:
+    """Load ``name`` from the data directory, re-reading whenever the file's mtime or size changes."""
+    path = _DATA_DIR / name
+    if not path.exists():
+        return pd.DataFrame()
+    stat = path.stat()
+    sig = (stat.st_mtime_ns, stat.st_size)
+    with _CACHE_LOCK:
+        hit = _CACHE.get(name)
+        if hit is not None and hit[0] == sig:
+            return hit[1]
+        frame = reader(path)
+        _CACHE[name] = (sig, frame)
+        return frame
+
+
+def clear_cache() -> None:
+    """Drop every cached table (used by tests and admin refresh)."""
+    with _CACHE_LOCK:
+        _CACHE.clear()
+
+
 def _load_shelters() -> pd.DataFrame:
-    p = _DATA_DIR / "shelters.csv"
-    return pd.read_csv(p) if p.exists() else pd.DataFrame()
+    return _read_cached("shelters.csv", pd.read_csv)
 
-@lru_cache(maxsize=1)
+
 def _load_aid() -> pd.DataFrame:
-    p = _DATA_DIR / "aid_resources.csv"
-    return pd.read_csv(p) if p.exists() else pd.DataFrame()
+    return _read_cached("aid_resources.csv", pd.read_csv)
 
-@lru_cache(maxsize=1)
+
 def _load_cooling() -> pd.DataFrame:
-    p = _DATA_DIR / "cooling_centers.csv"
-    return pd.read_csv(p, dtype={"zip": str}) if p.exists() else pd.DataFrame()
+    return _read_cached("cooling_centers.csv", lambda p: pd.read_csv(p, dtype={"zip": str}))
 
-@lru_cache(maxsize=1)
+
 def _load_contacts() -> pd.DataFrame:
-    p = _DATA_DIR / "emergency_contacts.csv"
-    return pd.read_csv(p) if p.exists() else pd.DataFrame()
+    return _read_cached("emergency_contacts.csv", pd.read_csv)
 
 
 # ── Intent detection ──────────────────────────────────────────────────────────
 # PowerBI: SWITCH(TRUE(), CONTAINSSTRING(query, kw1) || CONTAINSSTRING(query, kw2), "intent", ...)
 
 _INTENTS: dict[str, list[str]] = {
+    # Safety first: "emergency" is evaluated before every other intent (Phase 0.2).
+    "emergency":  ["emergency", "urgent", "danger", "crisis", "trapped", "hurt", "injured",
+                   "fire", "flooding", "tornado", "earthquake", "disaster", "sos", "right now", "immediately"],
     "greeting":   ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "howdy"],
     "thanks":     ["thank you", "thanks", "thx", "appreciate"],
     "cooling":    ["cooling", "cool down", "heat", "hot", "heatwave", "heat wave", "air condition",
                    "air-condition", "a/c", "too hot", "swelter"],
-    "emergency":  ["emergency", "urgent", "danger", "crisis", "trapped", "hurt", "injured",
-                   "fire", "flooding", "tornado", "earthquake", "disaster", "sos", "right now", "immediately"],
     "shelter":    ["shelter", "evacuation center", "safe place", "where to go", "refuge",
                    "emergency housing", "sleep", "stay tonight", "warming center"],
     "aid":        ["aid", "assistance", "food", "water", "supplies", "medical", "medicine",
@@ -488,6 +511,20 @@ def build_response(
     )
 
 
+_RISK_COLS = ("county", "region", "hazard", "risk_score", "risk_level", "svi_score")
+_CAPACITY_COLS = ("county", "hazard", "mitigation_effort", "status", "people_affected", "budget_usd", "amount_spent_usd")
+_COMPLAINT_COLS = ("county", "hazard", "category", "status", "priority", "description")
+
+
+def _ensure_columns(df: pd.DataFrame | None, columns: tuple[str, ...]) -> pd.DataFrame:
+    """Return ``df`` with every expected column present so empty or partial frames never raise KeyError."""
+    out = pd.DataFrame() if df is None else df.copy()
+    for col in columns:
+        if col not in out.columns:
+            out[col] = pd.Series(dtype="object")
+    return out
+
+
 # ── Public entry point ────────────────────────────────────────────────────────
 
 def chat(
@@ -500,6 +537,9 @@ def chat(
     Main chatbot entry point. No external calls. No API keys required.
     Pass the full (unfiltered) DataFrames so users can query any county.
     """
+    risk_df = _ensure_columns(risk_df, _RISK_COLS)
+    capacity_df = _ensure_columns(capacity_df, _CAPACITY_COLS)
+    complaints_df = _ensure_columns(complaints_df, _COMPLAINT_COLS)
     county_list = risk_df["county"].dropna().unique().tolist()
     intent      = detect_intent(user_message)
     county      = extract_county(user_message, county_list)

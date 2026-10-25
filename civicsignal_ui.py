@@ -151,6 +151,11 @@ def _prioritize(S, who):
         st.caption("Weights are yours to set. Change them and the ranking updates, so you can see how much a judgment call moves the list.")
         budget = st.number_input("Funds available ($ millions)", min_value=0.0, value=4.0, step=0.1, key="cs_budget")
     weights = _weights()
+    if not cs.weights_valid(weights):
+        with right:
+            st.warning("Total weight is 0, so there is nothing to rank by. Raise at least one criterion above 0 "
+                       "(total weight must be at least 1). The ranking table is hidden until you do.")
+        return
     rk = cs.ranked(S["projects"], weights, S["published"])
     within, spend = cs.funded_line(rk, budget)
 
