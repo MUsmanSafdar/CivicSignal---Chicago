@@ -1,6 +1,8 @@
-streamlit>=1.32
+streamlit>=1.37
 pandas>=2.0
 plotly>=5.18,<7
 python-dotenv>=1.0
 pdfplumber>=0.10
 openpyxl>=3.1
+reportlab>=4.0
+azure-data-tables>=12.5

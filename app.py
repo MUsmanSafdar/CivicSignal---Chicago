@@ -40,17 +40,24 @@ from analysis import (
 )
 from pdf_tasks import run_with_timeout, TaskTimeout, DEFAULT_TIMEOUT_S
 from safe_stats import safe_mean, format_kpi, safe_pivot, top_per_group, count_by, has_columns
+import audit_store
+import config as _config
+import identity as _ident
+from i18n import LANGUAGES, normalize_lang, t as _t
+from palette import LOW as GREEN, LIGHT_LOW as LIGHT_GREEN, LIGHT_HIGH as LIGHT_RED, HIGH as RED, RISK_SCALE as RG_SCALE
 
 # ----------------------------------------------------
 # Scope and palette
 # ----------------------------------------------------
 # Chicago metropolitan area: Cook plus the six collar counties.
-CHICAGO_COUNTIES = ["Cook", "DuPage", "Kane", "Kendall", "Lake", "McHenry", "Will"]
+# Configurable with ALLOWED_COUNTIES (comma-separated, or ALL). Unset keeps this Chicago-area default.
+CHICAGO_COUNTIES = _config.allowed_counties() or []
+ALLOWED_COUNTIES = _config.allowed_counties()
+TENANT = _config.tenant_id()
 CHICAGO_CENTER = {"lat": 41.85, "lon": -88.0}
 
-# Charts use red and green only (low = green, high = red) with a neutral middle.
-GREEN, LIGHT_GREEN, LIGHT_RED, RED, NEUTRAL = "#2e9e5b", "#a9d9b6", "#f1a59d", "#c62828", "#f4f1ea"
-RG_SCALE = [[0.0, GREEN], [0.5, NEUTRAL], [1.0, RED]]
+# Colour-vision-safe palette (Phase 1.7): blue = low, orange = high, neutral middle. The names GREEN/RED are kept
+# so existing chart code works, but the colours come from palette.py and every chart also carries text labels.
 
 # ----------------------------------------------------
 # Page setup
@@ -76,7 +83,7 @@ st.markdown("""
 .stApp, .stApp p, .stApp li, .stApp label, .stApp span { color: #1d1d1f; }
 .stApp h1, .stApp h2, .stApp h3, .stApp h4 { color: #1d1d1f !important; font-weight: 700; letter-spacing: -0.01em; }
 .stApp a { color: #0066cc !important; }
-[data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p { color: #6e6e73 !important; }
+[data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p { color: #515154 !important; }
 [data-testid="stWidgetLabel"] p, [data-testid="stWidgetLabel"] label { color: #1d1d1f !important; font-weight: 600; }
 
 /* Sidebar */
@@ -91,16 +98,16 @@ st.markdown("""
 
 /* KPI cards */
 [data-testid="stMetric"] { background: #ffffff; border: 1px solid #e5e5ea; border-radius: 16px; padding: 0.9rem 1.1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-[data-testid="stMetricLabel"], [data-testid="stMetricLabel"] p { color: #6e6e73 !important; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+[data-testid="stMetricLabel"], [data-testid="stMetricLabel"] p { color: #515154 !important; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
 [data-testid="stMetricValue"] { color: #1d1d1f !important; font-weight: 700; }
 
 /* Buttons: blue pills */
 .stButton > button, .stDownloadButton > button { background: #0071e3; color: #ffffff !important; border: 1px solid #0071e3; border-radius: 980px; font-weight: 600; padding: 0.45rem 1.3rem; }
 .stButton > button:hover, .stDownloadButton > button:hover { background: #0077ed; color: #ffffff !important; }
-.stButton > button:disabled { background: #e5e5ea; border-color: #e5e5ea; color: #86868b !important; }
+.stButton > button:disabled { background: #e5e5ea; border-color: #e5e5ea; color: #6b6b70 !important; }
 
 /* Tabs */
-[data-testid="stTabs"] [role="tab"] { color: #6e6e73 !important; font-weight: 600; border-bottom: 2px solid transparent; }
+[data-testid="stTabs"] [role="tab"] { color: #515154 !important; font-weight: 600; border-bottom: 2px solid transparent; }
 [data-testid="stTabs"] [role="tab"][aria-selected="true"] { color: #0071e3 !important; border-bottom-color: #0071e3; }
 
 /* Inputs: white fields, dark text */
@@ -159,6 +166,8 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@400;500;600;700&display=swap');
 html, body, .stApp, .stApp p, .stApp li, .stApp label, .stApp span, .stApp input, .stApp textarea { font-family: 'Public Sans', 'Segoe UI', sans-serif; }
+/* Keep Streamlit's icon font: the span rule above must not replace it (fixes '_arrow_right' text) */
+.stApp [data-testid="stIconMaterial"], .stApp span[class*="material"] { font-family: 'Material Symbols Rounded', 'Material Icons' !important; }
 .stApp h1, .stApp h2, .stApp h3 { font-family: 'Bricolage Grotesque', 'Segoe UI', sans-serif !important; letter-spacing: -0.02em; }
 .stApp { background: radial-gradient(900px 520px at 85% -5%, rgba(10,98,208,0.16), transparent 60%), radial-gradient(700px 420px at 0% 30%, rgba(238,123,59,0.10), transparent 60%), linear-gradient(180deg, #e3effb 0%, #f1f6fc 40%, #f8fbfe 100%) !important; }
 .cs-top { position: relative; overflow: hidden; border-radius: 22px; padding: 1.5rem 1.8rem; margin: 0.2rem 0 0.9rem; color: #eaf1fa;
@@ -200,12 +209,45 @@ st.markdown(
     unsafe_allow_html=True)
 
 # ----------------------------------------------------
+# Identity, language, storage (Phase 1)
+# ----------------------------------------------------
+try:
+    _headers = dict(st.context.headers)
+except Exception:  # noqa: BLE001 - older Streamlit or no request context: treat as anonymous
+    _headers = {}
+IDENTITY = _ident.resolve_identity(_headers)
+BACKEND = st.cache_resource(audit_store.get_backend)()
+LANG = normalize_lang(st.session_state.get("lang", "en"))
+IS_VERIFIED = bool(BACKEND.get_setting(TENANT, "verified_data", False))
+
+_LEGAL = [("ui.footer.terms", "TERMS.md"), ("ui.footer.privacy", "PRIVACY.md"), ("ui.footer.disclaimer", "DISCLAIMER.md"),
+          ("ui.footer.sources", "DATA_SOURCES.md"), ("ui.footer.accessibility", "ACCESSIBILITY.md")]
+
+
+def _banner() -> None:
+    """Sample-data banner: always shown unless an administrator confirmed verified tenant data."""
+    if IS_VERIFIED:
+        st.success(_t("ui.verified_banner", LANG))
+    else:
+        st.warning(_t("ui.sample_banner", LANG))
+
+
+def _footer() -> None:
+    """Footer with links to the legal and trust pages (shown inline so no external hosting is needed)."""
+    st.divider()
+    st.caption(_t("ui.footer.note", LANG))
+    cols = st.columns(len(_LEGAL))
+    for col, (key, fname) in zip(cols, _LEGAL):
+        with col.popover(_t(key, LANG)):
+            f = Path(__file__).resolve().parent / fname
+            st.markdown(f.read_text(encoding="utf-8") if f.exists() else f"{fname} is not installed.")
+
+
+# ----------------------------------------------------
 # Open access
 # ----------------------------------------------------
-# The dashboard and the CivicSignal workspace need no password so counties can use them freely.
-# Admin tools (data uploads, PDF summarizer, complaint detail) are the "Internal View". They are
-# available only if ADMIN_PASSWORD is set, and then only after that password is entered.
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
+# The dashboard needs no sign-in. Admin tools (data uploads, PDF summarizer, complaint detail) are the
+# "Internal View" and need a signed-in identity with the admin role (Easy Auth, or ALLOWED_EMAILS in local dev).
 
 # ----------------------------------------------------
 # Workspace switch: CivicSignal prioritization or the hazard dashboard
@@ -218,15 +260,20 @@ _workspace = st.radio(
 )
 if _workspace == "CivicSignal prioritization":
     import civicsignal_ui
-    civicsignal_ui.render()
+    civicsignal_ui.render(IDENTITY, BACKEND, TENANT, sample_data=not IS_VERIFIED)
+    _footer()
     st.stop()
 if _workspace == "Illinois SVI website":
     import website_ui
+    _banner()
     website_ui.render()
+    _footer()
     st.stop()
 if _workspace == "Cooling centers & shelters":
     import heat_ui
-    heat_ui.render()
+    _banner()
+    heat_ui.render(LANG)
+    _footer()
     st.stop()
 
 st.markdown("""
@@ -237,6 +284,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Prototype / data-freshness warning (always visible)
+_banner()
 st.warning(PROTOTYPE_WARNING)
 
 
@@ -439,21 +487,28 @@ actions_df = normalize_hazard_column(actions_df)
 # ── View mode (controls upload visibility and complaint detail) ──────
 # Public View  : read-only display of pre-loaded data, no uploads, no internal tools
 # Internal View: full admin access — uploads, local analysis, complaint detail, PDF summarizer
+st.sidebar.selectbox(_t("ui.language", LANG), list(LANGUAGES), index=list(LANGUAGES).index(LANG),
+                     format_func=LANGUAGES.get, key="lang")
 st.sidebar.header("Access Level")
-IS_INTERNAL = False
-if ADMIN_PASSWORD:
-    _want_internal = st.sidebar.toggle("Admin tools (password)", value=False, help="Data uploads, PDF summarizer, complaint detail.")
-    if _want_internal:
-        _pw = st.sidebar.text_input("Admin password", type="password")
-        if _pw and _pw == ADMIN_PASSWORD:
-            IS_INTERNAL = True
-        elif _pw:
-            st.sidebar.error("Incorrect password")
-
+IS_INTERNAL = _ident.can(IDENTITY, "upload_data")
+SHOW_ALL_DATA = False
+if IDENTITY:
+    st.sidebar.caption(f"Signed in as {IDENTITY.email} · roles: {', '.join(sorted(IDENTITY.roles))}")
 if IS_INTERNAL:
-    st.sidebar.success("Internal View — full admin access")
+    st.sidebar.success("Internal View — admin access")
+    if _ident.can(IDENTITY, "toggle_scope"):
+        SHOW_ALL_DATA = st.sidebar.toggle("Show all uploaded data", value=False,
+                                          help="Turns off the county scope for the dashboard. Admin only. Default scope: " + _config.scope_label(ALLOWED_COUNTIES))
+    if _ident.can(IDENTITY, "confirm_verified_data"):
+        _ver = st.sidebar.toggle("Verified tenant data is loaded", value=IS_VERIFIED,
+                                 help="Hides the sample-data banner. Turn on only after the data has been checked against its source.")
+        if _ver != IS_VERIFIED:
+            BACKEND.set_setting(TENANT, "verified_data", _ver)
+            audit_store.append_event(BACKEND, TENANT, IDENTITY.actor, "settings.verified_data", "tenant", TENANT, {"verified": _ver})
+            st.rerun()
 else:
-    st.sidebar.info("Public View — read-only, aggregated data only")
+    st.sidebar.info(_t("ui.public_info", LANG) + ("" if IDENTITY else ". Sign in for admin tools."))
+SCOPE_COUNTIES = None if SHOW_ALL_DATA else ALLOWED_COUNTIES
 
 
 st.sidebar.divider()
@@ -559,7 +614,7 @@ selected_regions = st.sidebar.multiselect(
 # Scope everything to the Chicago-area counties
 # ----------------------------------------------------
 risk_all = risk_df.copy()   # unfiltered, used by the Hazard Assistant (Phase 0.5)
-risk_df = risk_df[risk_df["county"].isin(CHICAGO_COUNTIES)].copy()
+risk_df = _config.scope_frame(risk_df, SCOPE_COUNTIES)
 
 # ----------------------------------------------------
 # Create filtered data
@@ -696,7 +751,7 @@ RISK_COLORS = {
 
 if county_geojson is not None:
     # Pre-format hover values as strings (customdata format specifiers are unreliable)
-    _risk_icons = {"Low": "🟢", "Medium": "🟢", "High": "🔴", "Very High": "🔴"}
+    _risk_icons = {"Low": "🔵", "Medium": "🔷", "High": "🟠", "Very High": "🟧"}
     filtered_risk["_score_fmt"] = filtered_risk["risk_score"].apply(lambda x: f"{x:.1f}")
     filtered_risk["_svi_fmt"]   = filtered_risk["svi_score"].apply(lambda x: f"{x:.2f}")
     filtered_risk["_icon"]      = filtered_risk["risk_level"].map(_risk_icons).fillna("⚪")
@@ -725,7 +780,7 @@ if county_geojson is not None:
     gis_fig.update_traces(
         hovertemplate=(
             "<b style='font-size:15px'>%{hovertext} County</b><br>"
-            "<span style='color:#6e6e73; font-size:11px'>%{customdata[0]} Region</span><br>"
+            "<span style='color:#515154; font-size:11px'>%{customdata[0]} Region</span><br>"
             "<hr style='border:0;border-top:1px solid #d2d2d7;margin:4px 0'>"
             "🌪 &nbsp;<b>Hazard:</b> %{customdata[1]}<br>"
             "%{customdata[6]} &nbsp;<b>Risk Level:</b> %{customdata[2]}<br>"
@@ -759,6 +814,9 @@ if county_geojson is not None:
         ),
     )
     st.plotly_chart(gis_fig, use_container_width=True)
+    with st.expander(_t("ui.risk_table", LANG)):
+        st.dataframe(filtered_risk[["county", "region", "hazard", "risk_level", "risk_score", "svi_score"]]
+                     .sort_values("risk_score", ascending=False), hide_index=True, use_container_width=True)
 
 else:
     st.warning("No valid Illinois county GeoJSON found. Showing fallback point map instead.")
@@ -925,8 +983,8 @@ complaints_raw = normalize_hazard_column(complaints_raw)
 # Unfiltered copies feed the Hazard Assistant so it can answer for any county (Phase 0.5).
 capacity_all = capacity_df.copy()
 complaints_all = complaints_raw.copy()
-capacity_df = capacity_df[capacity_df["county"].isin(CHICAGO_COUNTIES)].copy()
-complaints_raw = complaints_raw[complaints_raw["county"].isin(CHICAGO_COUNTIES)].copy()
+capacity_df = _config.scope_frame(capacity_df, SCOPE_COUNTIES)
+complaints_raw = _config.scope_frame(complaints_raw, SCOPE_COUNTIES)
 
 # ----------------------------------------------------
 # County Risk Analysis (rule-based, no AI)
@@ -1640,7 +1698,7 @@ if IS_INTERNAL and st.session_state.get("pdf_summary"):
     import plotly.graph_objects as _go
 
     _stats           = st.session_state.get("pdf_stats", {})
-    _counties_in_pdf = [c for c in _stats.get("counties_mentioned", []) if c in CHICAGO_COUNTIES]
+    _counties_in_pdf = [c for c in _stats.get("counties_mentioned", []) if SCOPE_COUNTIES is None or c in SCOPE_COUNTIES]
     _hazard_counts   = _stats.get("hazard_counts", {})
 
     # ── Header ────────────────────────────────────────────────────────────────
@@ -1651,7 +1709,7 @@ if IS_INTERNAL and st.session_state.get("pdf_summary"):
     _k1, _k2, _k3, _k4 = st.columns(4)
     _k1.metric("Pages Processed",    f"{_stats.get('processed','?')} / {_stats.get('pages','?')}")
     _k2.metric("Counties Referenced", len(_counties_in_pdf),
-               delta=f"of 7 Chicago-area counties" if _counties_in_pdf else None)
+               delta=f"of {len(CHICAGO_COUNTIES)} in-scope counties" if _counties_in_pdf else None)
     _k3.metric("Hazard Types Detected", len(_hazard_counts))
     _k4.metric("Tables Extracted",   _stats.get("tables", 0))
 
@@ -1702,7 +1760,7 @@ if IS_INTERNAL and st.session_state.get("pdf_summary"):
         _state_fig.update_traces(
             hovertemplate=(
                 "<b>%{hovertext} County</b><br>"
-                "<span style='color:#6e6e73'>%{customdata[0]} Region</span><br>"
+                "<span style='color:#515154'>%{customdata[0]} Region</span><br>"
                 "Risk Level: %{customdata[1]}<br>"
                 "Peak Risk Score: %{customdata[2]} / 5.0<br>"
                 "SVI: %{customdata[3]}<br>"
@@ -1724,7 +1782,7 @@ if IS_INTERNAL and st.session_state.get("pdf_summary"):
         st.plotly_chart(_state_fig, use_container_width=True)
         if _counties_in_pdf:
             st.caption(
-                f"Document references {len(_counties_in_pdf)} of 7 Chicago-area counties: "
+                f"Document references {len(_counties_in_pdf)} of {len(CHICAGO_COUNTIES)} in-scope counties: "
                 + ", ".join(sorted(_counties_in_pdf))
             )
     else:
@@ -1906,6 +1964,7 @@ else:
                 risk_df=risk_all,
                 capacity_df=capacity_all,
                 complaints_df=complaints_all,
+                lang=LANG,
             )
             st.markdown(_reply)
 
@@ -1916,3 +1975,4 @@ else:
             st.session_state.chat_messages = []
             st.rerun()
 
+_footer()

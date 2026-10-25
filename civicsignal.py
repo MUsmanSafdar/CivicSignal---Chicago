@@ -24,22 +24,25 @@ def _sp(name, type_, nfip, plan, expires=""):
     return {"name": name, "type": type_, "nfip": nfip, "plan": plan, "expires": expires}
 
 
-def _p(id_, name, hazard, program, cost, risk, vul, loss, bcr, ready, sponsor):
+def _p(id_, name, hazard, program, cost, risk, vul, loss, bcr, ready, sponsor, bca_ratio=None, scope=None):
+    """Build a sample project. ``bca_ratio`` (FEMA BCA benefit-cost ratio, None = not on file) and ``scope``
+    ('mitigation', 'planning', 'study' or None) are the project-level facts the HMGP rules read."""
     return {"id": id_, "name": name, "hazard": hazard, "program": program, "cost": cost,
-            "risk": risk, "vul": vul, "loss": loss, "bcr": bcr, "ready": ready, "sponsor": sponsor}
+            "risk": risk, "vul": vul, "loss": loss, "bcr": bcr, "ready": ready, "sponsor": sponsor,
+            "bca_ratio": bca_ratio, "scope": scope}
 
 
 PROJECTS = [
     _p("p1", "Elevate 14 repetitive-loss homes, Riverbend", "Flood", "FMA", 1.9, 88, 74, 95, 72, 60, _sp("Sample County", "local_government", "participating", "fema_approved", "2028-03-01")),
     _p("p2", "Upsize culverts, Mill Creek Road", "Flood", "FMA", 1.2, 80, 55, 70, 85, 80, _sp("Sample County Highway Dept.", "local_government", "unknown", "fema_approved", "2028-03-01")),
-    _p("p3", "Community safe room, Eastside Center", "Tornado", "HMGP", 0.9, 70, 82, 30, 58, 75, _sp("City of Eastside", "local_government", "participating", "fema_approved", "2027-06-30")),
-    _p("p4", "Storm siren network expansion", "Tornado", "HMGP", 0.5, 66, 60, 25, 64, 90, _sp("Sample County EMA", "local_government", "participating", "fema_approved", "2028-03-01")),
+    _p("p3", "Community safe room, Eastside Center", "Tornado", "HMGP", 0.9, 70, 82, 30, 58, 75, _sp("City of Eastside", "local_government", "participating", "fema_approved", "2027-06-30"), bca_ratio=1.4, scope="mitigation"),
+    _p("p4", "Storm siren network expansion", "Tornado", "HMGP", 0.5, 66, 60, 25, 64, 90, _sp("Sample County EMA", "local_government", "participating", "fema_approved", "2028-03-01"), scope="mitigation"),
     _p("p5", "Buy out 6 parcels, Oak Hollow", "Flood", "FMA", 1.4, 92, 68, 90, 78, 45, _sp("Village of Oak Hollow", "local_government", "participating", "fema_approved", "2025-11-30")),
-    _p("p6", "Backup generator, county water plant", "Power loss", "HMGP", 0.8, 60, 50, 40, 66, 85, _sp("Sample County Water District", "special_district", "participating", "fema_approved", "2028-03-01")),
-    _p("p7", "Wind retrofit, Memorial Hospital roof", "Wind", "HMGP", 1.1, 58, 62, 35, 40, 70, _sp("Memorial Hospital District", "special_district", "participating", "fema_approved", "2028-03-01")),
+    _p("p6", "Backup generator, county water plant", "Power loss", "HMGP", 0.8, 60, 50, 40, 66, 85, _sp("Sample County Water District", "special_district", "participating", "fema_approved", "2028-03-01"), bca_ratio=0.9, scope="mitigation"),
+    _p("p7", "Wind retrofit, Memorial Hospital roof", "Wind", "HMGP", 1.1, 58, 62, 35, 40, 70, _sp("Memorial Hospital District", "special_district", "participating", "fema_approved", "2028-03-01"), bca_ratio=1.2, scope="mitigation"),
     _p("p8", "Detention basin, Pine Street", "Flood", "FMA", 2.2, 74, 48, 65, 52, 50, _sp("Pine Creek Drainage District", "special_district", "participating", "fema_approved", "2027-09-15")),
     _p("p9", "Drainage fix, Lakeview manufactured-home park", "Flood", "FMA", 0.7, 72, 90, 60, 70, 65, _sp("Lakeview Residents Association", "nonprofit", "participating", "fema_approved", "2028-03-01")),
-    _p("p10", "Dam spillway study (planning)", "Dam failure", "HMGP", 0.3, 54, 40, 20, 35, 95, _sp("Sample County", "local_government", "participating", "fema_approved", "2028-03-01")),
+    _p("p10", "Dam spillway study (planning)", "Dam failure", "HMGP", 0.3, 54, 40, 20, 35, 95, _sp("Sample County", "local_government", "participating", "fema_approved", "2028-03-01"), bca_ratio=1.1, scope="study"),
 ]
 
 RULES = [
@@ -53,6 +56,29 @@ RULES = [
      "url": "https://www.law.cornell.edu/cfr/text/44/77.2",
      "text": "A subapplicant is a State agency, community, or Indian Tribal government. Private nonprofits are not eligible subapplicants. A \u201ccommunity\u201d is defined at 77.2(d)."},
 ]
+
+HMGP_URL = "https://www.law.cornell.edu/cfr/text/44/206.434"
+RULES += [
+    {"id": "hmgp.eligible_entity_type", "program": "HMGP", "title": "Eligible subapplicant type", "cite": "44 CFR 206.434(a)(2)",
+     "url": HMGP_URL, "level": "sponsor",
+     "text": "Subapplicants are State agencies, local governments, private nonprofits that own or operate a private nonprofit facility "
+             "(conservation organizations for open space only), and Indian Tribal governments."},
+    {"id": "hmgp.mitigation_plan", "program": "HMGP", "title": "Approved hazard mitigation plan", "cite": "44 CFR 206.434(b)",
+     "url": HMGP_URL, "level": "sponsor",
+     "text": "The applicant and subapplicant must have a FEMA-approved mitigation plan before a subaward is made. A waiver may be "
+             "available in extraordinary circumstances, and the plan must then be completed within 12 months."},
+    {"id": "hmgp.cost_effectiveness", "program": "HMGP", "title": "Cost-effective and substantially reduces risk", "cite": "44 CFR 206.434(c)(5)",
+     "url": HMGP_URL, "level": "project",
+     "text": "The project must be cost-effective and substantially reduce the risk of future damage, hardship, loss, or suffering. "
+             "FEMA\u2019s benefit-cost analysis is the usual test (benefit-cost ratio of 1.0 or more)."},
+    {"id": "hmgp.project_scope", "program": "HMGP", "title": "Solves a problem (not a study alone)", "cite": "44 CFR 206.434(c)(4), (d)",
+     "url": HMGP_URL, "level": "project",
+     "text": "The project must solve a problem or be a functional part of a solution. Studies alone are not eligible. "
+             "Planning activities are eligible only within the limits in paragraph (d)."},
+]
+for _r in RULES:
+    _r.setdefault("program", "FMA")
+    _r.setdefault("level", "sponsor")
 
 ENTITY_LABEL = {"state": "State agency", "local_government": "Local government", "tribal_government": "Tribal government",
                 "territory": "Territory", "special_district": "Special district", "nonprofit": "Private nonprofit", "unknown": "Not on file"}
@@ -103,16 +129,78 @@ def eval_rule(rule_id, s, today=None):
     return "review", "This value or rule is not recognised, so a reviewer must decide."
 
 
+def eval_hmgp_rule(rule_id, p, today=None):
+    """Return (outcome, reason) for an HMGP rule (44 CFR 206.434). Fail-closed: unknown facts give 'review'."""
+    today = today or date.today().isoformat()
+    sp = p["sponsor"]
+    n = sp["name"]
+    if rule_id == "hmgp.eligible_entity_type":
+        t = sp.get("type") or "unknown"
+        if t in ("state", "local_government", "tribal_government"):
+            return "pass", f"{n} ({ENTITY_LABEL[t].lower()}) is within the eligible subapplicant types."
+        if t == "nonprofit":
+            return "review", (f"{n} is a private nonprofit. It is eligible only if it owns or operates a private nonprofit facility "
+                              "(or is a conservation organization applying for open space). A reviewer must confirm.")
+        if t in ("territory", "special_district"):
+            return "review", (f"A {ENTITY_LABEL[t].lower()} is not named in 44 CFR 206.434(a)(2). A reviewer must confirm that it meets "
+                              "the definition of a local government or Tribal government.")
+        return "review", f"Entity type for {n} is not on file. This is a hold, not a denial."
+    if rule_id == "hmgp.mitigation_plan":
+        plan, exp = sp.get("plan", "unknown"), sp.get("expires", "")
+        if plan == "fema_approved":
+            if not exp:
+                return "review", f"A FEMA-approved plan is recorded for {n} but no expiry date is on file. Confirm the plan is current."
+            if exp < today:
+                return "review", (f"{n}\u2019s plan expired on {exp}. An approved plan is required before a subaward. A reviewer should check "
+                                  "whether an update is in progress or a waiver applies.")
+            return "pass", f"{n} has a FEMA-approved plan on file, expiring {exp}."
+        if plan in ("expired", "not_on_file"):
+            return "review", (f"{n}\u2019s plan status is \u201c{PLAN_LABEL[plan].lower()}\u201d. An approved plan is required before a subaward, "
+                              "unless FEMA grants a waiver (extraordinary circumstances; plan due within 12 months).")
+        return "review", f"Plan status for {n} is not on file. This is a hold, not a denial."
+    if rule_id == "hmgp.cost_effectiveness":
+        r = p.get("bca_ratio")
+        if r is None:
+            return "review", "No benefit-cost ratio is on file. Run FEMA\u2019s BCA Toolkit and record the ratio. This is a hold, not a denial."
+        try:
+            r = float(r)
+        except (TypeError, ValueError):
+            return "review", "The recorded benefit-cost ratio is not a number, so a reviewer must check it."
+        if r >= 1.0:
+            return "pass", f"The recorded benefit-cost ratio is {r:.2f}, which meets the 1.0 threshold."
+        return "fail", f"The recorded benefit-cost ratio is {r:.2f}, below 1.0, so the project is not shown to be cost-effective."
+    if rule_id == "hmgp.project_scope":
+        sc = p.get("scope")
+        if sc == "mitigation":
+            return "pass", "The project is a mitigation measure that solves a problem."
+        if sc == "study":
+            return "fail", "The project is a study on its own. Studies alone are not eligible under 44 CFR 206.434(c)(4). Pair it with a mitigation measure."
+        if sc == "planning":
+            return "review", "Planning activities are eligible only within the limits in 44 CFR 206.434(d). A reviewer must confirm the cap is met."
+        return "review", "The project scope is not on file, so a reviewer must decide."
+    return "review", "This value or rule is not recognised, so a reviewer must decide."
+
+
+def rules_for(program):
+    """The rules that apply to a program ('FMA' or 'HMGP')."""
+    return [r for r in RULES if r.get("program", "FMA") == program]
+
+
 def evaluate_project(p, published, today=None):
-    """FMA projects only (no HMGP rules yet). Unpublished rules always give 'review'. Any fail wins, then any review."""
-    if p["program"] != "FMA":
+    """FMA and HMGP projects. Unpublished rules always give 'review'. Any fail wins, then any review.
+
+    Returns None only for a program that has no rules, which the UI shows as 'not checked'.
+    """
+    rules = rules_for(p["program"])
+    if not rules:
         return None
     outs = []
-    for r in RULES:
+    for r in rules:
         if r["id"] not in published:
             outs.append({"rule": r, "out": "review", "why": "This rule has not been approved for use by a reviewer yet. No determination can be made against it."})
         else:
-            o, w = eval_rule(r["id"], p["sponsor"], today)
+            o, w = (eval_hmgp_rule(r["id"], p, today) if r["id"].startswith("hmgp.")
+                    else eval_rule(r["id"], p["sponsor"], today))
             outs.append({"rule": r, "out": o, "why": w})
     kinds = [o["out"] for o in outs]
     overall = "fail" if "fail" in kinds else "review" if "review" in kinds else "pass"
@@ -254,6 +342,32 @@ def save_facts(st_, project_id, new, actor):
     p["sponsor"] = after
     append_event(st_["audit"], f"user:{actor or 'unnamed'}", "applicant.facts_updated", "project", project_id,
                  {"project": p["name"], "before": before, "after": dict(after)})
+    record_determination_changes(st_)
+    return True, "Facts saved and eligibility re-checked."
+
+
+PROJECT_FACT_FIELDS = ("bca_ratio", "scope")
+
+
+def save_project_facts(st_, project_id, new, actor):
+    """Update project-level facts the HMGP rules read (``bca_ratio``, ``scope``) and re-check eligibility."""
+    p = next(x for x in st_["projects"] if x["id"] == project_id)
+    clean = {k: v for k, v in new.items() if k in PROJECT_FACT_FIELDS}
+    if "bca_ratio" in clean and clean["bca_ratio"] is not None:
+        try:
+            clean["bca_ratio"] = float(clean["bca_ratio"])
+        except (TypeError, ValueError):
+            return False, "The benefit-cost ratio must be a number."
+        if clean["bca_ratio"] < 0:
+            return False, "The benefit-cost ratio cannot be negative."
+    if "scope" in clean and clean["scope"] not in (None, "mitigation", "planning", "study"):
+        return False, "Scope must be mitigation, planning or study."
+    before = {k: p.get(k) for k in clean}
+    if before == clean:
+        return False, "No changes to save."
+    p.update(clean)
+    append_event(st_["audit"], f"user:{actor or 'unnamed'}", "project.facts_updated", "project", project_id,
+                 {"project": p["name"], "before": before, "after": dict(clean)})
     record_determination_changes(st_)
     return True, "Facts saved and eligibility re-checked."
 
