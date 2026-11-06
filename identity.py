@@ -30,7 +30,11 @@ PERMISSIONS: dict[str, frozenset[str]] = {
     "refresh_funding": frozenset({"reviewer", "official", "admin"}),
     "run_tamper_demo": frozenset({"admin"}),
 }
-
+"pas_view": frozenset(ROLES),
+   "pas_intake": frozenset({"reviewer", "official", "admin"}),
+   "pas_review": frozenset({"reviewer", "official", "admin"}),
+   "pas_decide": frozenset({"official", "admin"}),
+   "pas_config": frozenset({"admin"}),
 _ROLE_CLAIMS = ("roles", "role", "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
 _EMAIL_CLAIMS = ("preferred_username", "email", "emails",
                  "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress", "upn")
