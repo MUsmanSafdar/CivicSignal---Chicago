@@ -23,7 +23,7 @@ import pas_packet
 import pas_rules
 import pas_store
 
-VIEWS = ["State Overview", "Project Review Workspace", "Jurisdiction Overview", "Geographic Review Map", "Reports and Audit Packets", "Setup"]
+VIEWS = ["State Overview", "Document Review", "Project Review Workspace", "Jurisdiction Overview", "Geographic Review Map", "Reports and Audit Packets", "Setup"]
 BANNER = ("**Internal administrative aid.** This module tracks state and county review steps. It is not a FEMA approval, award or eligibility "
           "determination, and it does not replace FEMA's review. Items FEMA decides are labelled *federal*.")
 
@@ -363,6 +363,11 @@ def _setup(ctx: Any, pas: dict[str, Any], now: str) -> None:
     st.caption(f"Catalogue version {pas_rules.CATALOGUE_VERSION}. Rows not confirmed need checking against the guide for your funding opportunity.")
 
 
+def _doc_review(ctx: Any, pas: dict[str, Any], now: str) -> None:
+    import pas_review_ui
+    pas_review_ui.render(ctx.identity, ctx.backend, ctx.tenant, sample_data=ctx.sample_data)
+
+
 def render(identity: Any, backend: Any, tenant: str, *, sample_data: bool = True) -> None:
     st.markdown(cui.CSS, unsafe_allow_html=True)
     st.title("PAS Review Center")
@@ -376,6 +381,6 @@ def render(identity: Any, backend: Any, tenant: str, *, sample_data: bool = True
     if any(c["demo"] for c in pas["cases"].values()):
         st.warning("Demo records are present. Figures include invented cases.")
     view = st.radio("View", VIEWS, horizontal=True, key="pas_view")
-    {"State Overview": _overview, "Project Review Workspace": _workspace, "Jurisdiction Overview": _jurisdictions,
+    {"State Overview": _overview, "Document Review": _doc_review, "Project Review Workspace": _workspace, "Jurisdiction Overview": _jurisdictions,
      "Geographic Review Map": _map, "Reports and Audit Packets": _reports, "Setup": _setup}[view](
-        type("Ctx", (), {"identity": identity, "backend": backend, "tenant": tenant})(), pas, now)
+        type("Ctx", (), {"identity": identity, "backend": backend, "tenant": tenant, "sample_data": sample_data})(), pas, now)

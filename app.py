@@ -261,7 +261,7 @@ def _footer() -> None:
 _workspace = st.radio(
     "Workspace",
     ["Illinois SVI website", "CivicSignal prioritization", "Hazard dashboard", "Cooling centers & shelters",
-     "PAS Review Center", "Action Portfolio"],
+     "PAS Review Center", "Action Portfolio", "Methodology & Evidence"],
     horizontal=True,
     key="workspace",
 )
@@ -274,6 +274,12 @@ if _workspace == "PAS Review Center":
     import pas_ui
     _banner()
     pas_ui.render(IDENTITY, BACKEND, TENANT, sample_data=not IS_VERIFIED)
+    _footer()
+    st.stop()
+if _workspace == "Methodology & Evidence":
+    import methodology_ui
+    _banner()
+    methodology_ui.render(IDENTITY, BACKEND, TENANT, sample_data=not IS_VERIFIED)
     _footer()
     st.stop()
 if _workspace == "Action Portfolio":
