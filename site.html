@@ -187,6 +187,18 @@ footer p{max-width:100ch;margin-top:8px}
 @keyframes selp{50%{stroke-width:4}}
 .scrollbar{position:fixed;left:0;top:env(safe-area-inset-top,0px);height:3px;width:0;background:linear-gradient(90deg,#5aa6ff,#ee7b3b);z-index:70}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}}
+/* Embedded in the app: the page grows to its full height so only the app scrolls (no scroll inside a scroll) */
+html.embed{scroll-behavior:auto;overflow:hidden}
+html.embed body{overflow:hidden;margin:0}
+html.embed nav.top{position:static}
+html.embed .scrollbar,html.embed body::before{display:none}
+html.embed section,html.embed [id]{scroll-margin-top:16px}
+@media (max-width:520px){
+  nav.top .wrap{flex-wrap:nowrap;gap:12px;min-height:56px}
+  .brand{font-size:18px}.brand img{width:30px;height:30px}
+  nav.top .links{flex-wrap:nowrap}
+  nav.top .links .btn{padding:9px 14px;font-size:14px;white-space:nowrap}
+}
 </style>
 
 <div class="scrollbar" id="sb"></div>
@@ -513,5 +525,13 @@ document.addEventListener('click',function(e){var a=e.target.closest&&e.target.c
   if('IntersectionObserver' in window&&!rm){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.08});
     els.forEach(function(e){e.classList.add('rv');io.observe(e)})}
   var sb=document.getElementById('sb');addEventListener('scroll',function(){var h=document.documentElement;sb.style.width=(100*scrollY/Math.max(1,h.scrollHeight-innerHeight))+'%'},{passive:true});
+})();
+(function(){
+  var fe=null;try{fe=window.frameElement}catch(e){}
+  if(!fe)return;
+  var root=document.documentElement,last=0;root.classList.add('embed');
+  function fit(){var h=Math.ceil(root.getBoundingClientRect().height);if(h>0&&Math.abs(h-last)>1){last=h;fe.style.height=h+'px';fe.setAttribute('height',h)}}
+  if('ResizeObserver' in window){new ResizeObserver(fit).observe(document.body)}
+  addEventListener('load',fit);addEventListener('resize',fit);fit();setTimeout(fit,400);setTimeout(fit,1500);
 })();
 </script>

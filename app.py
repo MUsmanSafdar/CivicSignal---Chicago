@@ -285,8 +285,8 @@ def _footer() -> None:
 # ----------------------------------------------------
 _workspace = st.radio(
     "Workspace",
-    ["Illinois SVI website", "CivicSignal prioritization", "Hazard dashboard", "Cooling centers & shelters",
-     "PAS Review Center", "Action Portfolio"],
+    ["Illinois SVI website", "Funded projects", "CivicSignal prioritization", "Hazard dashboard",
+     "Cooling centers & shelters", "PAS Review Center", "Action Portfolio"],
     horizontal=True,
     key="workspace",
 )
@@ -311,6 +311,12 @@ if _workspace == "Illinois SVI website":
     import website_ui
     _banner()
     website_ui.render()
+    _footer()
+    st.stop()
+if _workspace == "Funded projects":
+    import funded_projects_ui
+    _banner()
+    funded_projects_ui.render()
     _footer()
     st.stop()
 if _workspace == "Cooling centers & shelters":
