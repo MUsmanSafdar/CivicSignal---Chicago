@@ -203,7 +203,7 @@ html, body, .stApp, .stApp p, .stApp li, .stApp label, .stApp span, .stApp input
 /* Mobile layout (phones): compact header, one-row scrolling navigation, no sticky bar, tighter gutters */
 @media (max-width: 700px) {
   html { font-size: 16px; }
-  .stApp .block-container { padding: 0.6rem 0.85rem 2.5rem !important; }
+  .stApp .block-container { padding: 0.6rem 0.85rem 5.5rem !important; }
   .cs-top { flex-wrap: nowrap; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; border-radius: 16px; margin: 0 0 0.6rem; box-shadow: 0 10px 26px rgba(11,22,38,0.22); }
   .cs-top img { width: 42px; height: 42px; padding: 3px; flex: 0 0 auto; box-shadow: 0 0 0 3px rgba(90,166,255,0.35); }
   .stApp .cs-top h1 { font-size: 1.4rem !important; }
@@ -265,11 +265,13 @@ def _footer() -> None:
     """Footer with links to the legal and trust pages (shown inline so no external hosting is needed)."""
     st.divider()
     st.caption(_t("ui.footer.note", LANG))
-    cols = st.columns(len(_LEGAL))
-    for col, (key, fname) in zip(cols, _LEGAL):
-        with col.popover(_t(key, LANG)):
-            f = Path(__file__).resolve().parent / fname
-            st.markdown(f.read_text(encoding="utf-8") if f.exists() else f"{fname} is not installed.")
+    # One expander with a tab per document: it always opens downward and grows the page, so it works on
+    # phones (a popover at the bottom of the page has no room below and flips upward over the content).
+    with st.expander(" · ".join(_t(key, LANG) for key, _ in _LEGAL)):
+        for tab, (_key, fname) in zip(st.tabs([_t(key, LANG) for key, _ in _LEGAL]), _LEGAL):
+            with tab:
+                f = Path(__file__).resolve().parent / fname
+                st.markdown(f.read_text(encoding="utf-8") if f.exists() else f"{fname} is not installed.")
 
 
 # ----------------------------------------------------
