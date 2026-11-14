@@ -200,7 +200,30 @@ html, body, .stApp, .stApp p, .stApp li, .stApp label, .stApp span, .stApp input
 .stApp [data-testid="stPlotlyChart"], .stApp [data-testid="stDeckGlJsonChart"] { background: #ffffff; border: 1px solid #dbe7f5; border-radius: 18px; padding: 8px; box-shadow: 0 10px 30px rgba(10,60,120,0.09); }
 .stApp [data-testid="stChatMessage"] { box-shadow: 0 6px 18px rgba(10,60,120,0.07); }
 .stApp .section-accent { background: linear-gradient(90deg, #0a62d0, #ee7b3b); height: 4px; }
-@media (max-width: 700px) { .cs-pills { margin-left: 0; } .cs-top h1 { font-size: 1.5rem !important; } }
+/* Mobile layout (phones): compact header, one-row scrolling navigation, no sticky bar, tighter gutters */
+@media (max-width: 700px) {
+  html { font-size: 16px; }
+  .stApp .block-container { padding: 0.6rem 0.85rem 2.5rem !important; }
+  .cs-top { flex-wrap: nowrap; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; border-radius: 16px; margin: 0 0 0.6rem; box-shadow: 0 10px 26px rgba(11,22,38,0.22); }
+  .cs-top img { width: 42px; height: 42px; padding: 3px; flex: 0 0 auto; box-shadow: 0 0 0 3px rgba(90,166,255,0.35); }
+  .stApp .cs-top h1 { font-size: 1.4rem !important; }
+  .stApp .cs-top p { font-size: 0.8rem; line-height: 1.3; }
+  .cs-pills { display: none; }
+  .stApp [class*="st-key-workspace"] { position: static; background: none; padding: 0; margin: 0; }
+  .stApp [data-testid="stRadio"] { display: block; margin: 0 0 0.3rem; }
+  .stApp [data-testid="stRadio"] [role="radiogroup"] { border-radius: 16px; padding: 6px 8px; gap: 2px 6px; }
+  .stApp [class*="st-key-workspace"] [data-testid="stRadio"] { margin: 0 -0.85rem 0.4rem; }
+  .stApp [class*="st-key-workspace"] [role="radiogroup"] { display: flex; flex-direction: row; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none; gap: 8px; padding: 4px 0.85rem 8px; background: transparent; border: 0; border-radius: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .stApp [class*="st-key-workspace"] [role="radiogroup"]::-webkit-scrollbar { display: none; }
+  .stApp [class*="st-key-workspace"] [role="radiogroup"] > * { flex: 0 0 auto; }
+  .stApp [class*="st-key-workspace"] [role="radiogroup"] label { margin: 0; padding: 0.5rem 0.95rem; min-height: 40px; border-radius: 980px; background: #ffffff; border: 1px solid #cfe0f3; box-shadow: 0 2px 8px rgba(10,60,120,0.08); white-space: nowrap; transform: none !important; }
+  .stApp [class*="st-key-workspace"] [role="radiogroup"] label > div > div:first-child { display: none; }
+  .stApp [class*="st-key-workspace"] [role="radiogroup"] label p { font-size: 0.88rem; font-weight: 600; white-space: nowrap; color: #33506f !important; }
+  .stApp [class*="st-key-workspace"] [role="radiogroup"] label:has(input:checked) { background: linear-gradient(135deg, #0a62d0, #3a8bff); border-color: transparent; box-shadow: 0 6px 16px rgba(10,98,208,0.35); }
+  .stApp [class*="st-key-workspace"] [role="radiogroup"] label:has(input:checked) p { color: #ffffff !important; }
+  .stApp [data-testid="stIFrame"] { display: block; width: 100%; border-radius: 14px; }
+  .stApp [data-testid="stMetric"]:hover, .stApp .stButton > button:hover { transform: none; }
+}
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 """, unsafe_allow_html=True)
@@ -261,7 +284,7 @@ def _footer() -> None:
 _workspace = st.radio(
     "Workspace",
     ["Illinois SVI website", "CivicSignal prioritization", "Hazard dashboard", "Cooling centers & shelters",
-     "PAS Review Center", "Action Portfolio", "Methodology & Evidence"],
+     "PAS Review Center", "Action Portfolio"],
     horizontal=True,
     key="workspace",
 )
@@ -274,12 +297,6 @@ if _workspace == "PAS Review Center":
     import pas_ui
     _banner()
     pas_ui.render(IDENTITY, BACKEND, TENANT, sample_data=not IS_VERIFIED)
-    _footer()
-    st.stop()
-if _workspace == "Methodology & Evidence":
-    import methodology_ui
-    _banner()
-    methodology_ui.render(IDENTITY, BACKEND, TENANT, sample_data=not IS_VERIFIED)
     _footer()
     st.stop()
 if _workspace == "Action Portfolio":

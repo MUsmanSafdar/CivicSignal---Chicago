@@ -12,4 +12,6 @@ def render():
         st.error("Website page file is missing (site.html).")
         return
     st.caption("Statewide view: social vulnerability (SVI) and hazard risk for all 102 Illinois counties.")
+    # The page sizes its own frame to its full height (see the "embed" script in site.html), so the app is
+    # the only thing that scrolls. scrolling=True is only a fallback if a browser blocks that resize.
     components.html(_PAGE.read_text(encoding="utf-8"), height=1000, scrolling=True)
