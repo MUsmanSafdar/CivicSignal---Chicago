@@ -200,6 +200,8 @@ html, body, .stApp, .stApp p, .stApp li, .stApp label, .stApp span, .stApp input
 .stApp [data-testid="stPlotlyChart"], .stApp [data-testid="stDeckGlJsonChart"] { background: #ffffff; border: 1px solid #dbe7f5; border-radius: 18px; padding: 8px; box-shadow: 0 10px 30px rgba(10,60,120,0.09); }
 .stApp [data-testid="stChatMessage"] { box-shadow: 0 6px 18px rgba(10,60,120,0.07); }
 .stApp .section-accent { background: linear-gradient(90deg, #0a62d0, #ee7b3b); height: 4px; }
+/* An embedded page sets its own frame height; let the Streamlit wrapper grow with it so nothing below overlaps */
+.stApp [data-testid="stElementContainer"]:has(> iframe[data-testid="stIFrame"]) { flex: 0 0 auto !important; height: auto !important; }
 /* Mobile layout (phones): compact header, one-row scrolling navigation, no sticky bar, tighter gutters */
 @media (max-width: 700px) {
   html { font-size: 16px; }
@@ -285,7 +287,7 @@ def _footer() -> None:
 # ----------------------------------------------------
 _workspace = st.radio(
     "Workspace",
-    ["Illinois SVI website", "Funded projects", "CivicSignal prioritization", "Hazard dashboard",
+    ["Illinois SVI website", "Grant projects", "CivicSignal prioritization", "Hazard dashboard",
      "Cooling centers & shelters", "PAS Review Center", "Action Portfolio"],
     horizontal=True,
     key="workspace",
@@ -313,7 +315,7 @@ if _workspace == "Illinois SVI website":
     website_ui.render()
     _footer()
     st.stop()
-if _workspace == "Funded projects":
+if _workspace == "Grant projects":
     import funded_projects_ui
     _banner()
     funded_projects_ui.render()
