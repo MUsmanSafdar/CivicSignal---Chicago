@@ -368,6 +368,19 @@ def _doc_review(ctx: Any, pas: dict[str, Any], now: str) -> None:
     pas_review_ui.render(ctx.identity, ctx.backend, ctx.tenant, sample_data=ctx.sample_data)
 
 
+def _preview_demo(identity: Any, pas: dict[str, Any], sample_data: bool, now: str) -> bool:
+    """For a read-only visitor in sample-data mode with an empty store, fill ``pas`` with the labelled demo cases IN MEMORY.
+
+    Nothing is saved and the queued audit events are discarded, so the stored state and the audit trail stay untouched.
+    Anyone who can change cases never gets the preview: they load demo records on purpose from Setup.
+    """
+    if not sample_data or pas["cases"] or any(_can(identity, p) for p in ("pas_intake", "pas_review", "pas_decide", "pas_config")):
+        return False
+    pas_demo.load_demo(pas, "demo (invented example)", {p["id"]: p for p in cs.PROJECTS}, now)
+    pe.drain_outbox(pas)
+    return bool(pas["cases"])
+
+
 def render(identity: Any, backend: Any, tenant: str, *, sample_data: bool = True) -> None:
     st.markdown(cui.CSS, unsafe_allow_html=True)
     st.title("PAS Review Center")
@@ -378,7 +391,10 @@ def render(identity: Any, backend: Any, tenant: str, *, sample_data: bool = True
         st.caption("Local demo mode: identity comes from local development settings, not a verified agency sign-in.")
     pas = _load(backend, tenant)
     now = pe.now_iso()
-    if any(c["demo"] for c in pas["cases"].values()):
+    if _preview_demo(identity, pas, sample_data, now):
+        st.info("Example cases are shown so you can see how the review center works. They are invented, are not saved, "
+                "and disappear when a signed-in team adds its own cases.")
+    elif any(c["demo"] for c in pas["cases"].values()):
         st.warning("Demo records are present. Figures include invented cases.")
     view = st.radio("View", VIEWS, horizontal=True, key="pas_view")
     {"State Overview": _overview, "Document Review": _doc_review, "Project Review Workspace": _workspace, "Jurisdiction Overview": _jurisdictions,
