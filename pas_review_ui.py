@@ -42,9 +42,15 @@ def render(identity: Any, backend: Any, tenant: str, *, sample_data: bool = True
     if not can_submit:
         st.info("Sign in with a reviewer, official or admin role to submit and review documents. You can read existing reviews.")
     store = load_reviews(backend, tenant)
+    example = sample_data and not store["reviews"] and not can_submit
+    if example:
+        import pas_review_demo
+        store = pas_review_demo.demo_store()   # in memory only: a visitor cannot save, so these never reach the store
+        st.info("Example reviews are shown below (" + ", ".join(sorted(store["reviews"])) + "). The documents are invented and "
+                "have deliberate gaps; the findings are what the checks actually return for them.")
     ids = sorted(store["reviews"], reverse=True)
-    mode = st.radio("Work on", ["New submission"] + ids, horizontal=True, key="docrev_pick") if ids else "New submission"
-    review = None if mode == "New submission" else store["reviews"][mode]
+    mode = st.radio("Work on", ["New submission"] + ids, index=1 if example else 0, horizontal=True, key="docrev_pick") if ids else "New submission"
+    review = store["reviews"].get(mode) if isinstance(mode, str) and mode != "New submission" else None
     staged = st.session_state.get("docrev_staged")
     st.progress((pr.step(review, bool(staged)) + 1) / len(pr.STEPS), text=" > ".join(
         f"**{s}**" if i == pr.step(review, bool(staged)) else s for i, s in enumerate(pr.STEPS)))

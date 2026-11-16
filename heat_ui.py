@@ -33,7 +33,7 @@ def _load_geo():
 
 @st.cache_data
 def _load():
-    cc = pd.read_csv(DATA / "cooling_centers.csv", dtype={"zip": str})
+    cc = pd.read_csv(DATA / "cooling_centers.csv", dtype={"zip": str}, keep_default_na=False)   # blank city/ZIP stay ""
     sh = pd.read_csv(DATA / "shelters.csv", dtype={"zip": str})
     risk = pd.read_csv(DATA / "county_risk.csv")
     cap = pd.read_csv(DATA / "county_capacity.csv")
@@ -83,7 +83,7 @@ def _gis_map(view, cc, need):
     if not view.empty:
         fig.add_trace(go.Scattergeo(
             lon=view["longitude"], lat=view["latitude"], mode="markers", name="\u2605 Cooling center",
-            marker=dict(symbol="star", size=14, color="#ffffff", line=dict(color="#1d1d1f", width=1.6)),
+            marker=dict(symbol="star", size=14 if len(view) <= 80 else 10, color="#ffffff", line=dict(color="#1d1d1f", width=1.6)),
             customdata=view[["address", "hours", "phone"]].values, text=view["name"],
             hovertemplate="<b>\u2605 %{text}</b><br>%{customdata[0]}<br>%{customdata[1]}<br>%{customdata[2]}<extra></extra>",
         ))
@@ -172,7 +172,7 @@ def render(lang: str = "en"):
         f1, f2 = st.columns(2)
         sources = ["All"] + sorted(cc["source"].unique())
         src = f1.selectbox("Source", sources, key="heat_src")
-        cities = ["All"] + sorted(cc["city"].unique(), key=lambda c: (c != "Chicago", c))
+        cities = ["All"] + sorted((c for c in cc["city"].unique() if c), key=lambda c: (c != "Chicago", c))
         city = f2.selectbox("City", cities, key="heat_city")
         zip_q = st.text_input("ZIP code (optional)", key="heat_zip", max_chars=5, placeholder="60639")
         view = cc.copy()

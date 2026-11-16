@@ -5,6 +5,8 @@ Not a FEMA determination, and the fit score is a keyword first pass that the rev
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 import streamlit as st
@@ -16,6 +18,30 @@ from pdf_tasks import DEFAULT_TIMEOUT_S, TaskTimeout, run_with_timeout
 MAX_UPLOAD_MB = 60
 
 
+DEMO_FILE = Path(__file__).parent / "portfolio_demo.json"
+
+
+def load_example() -> dict[str, Any] | None:
+    """A worked example saved from a real public plan document, or None when the file is missing or unreadable."""
+    try:
+        d = json.loads(DEMO_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    res = d.get("result") if isinstance(d, dict) else None
+    if not isinstance(res, dict) or not res.get("actions"):
+        return None
+    return {"document": str(d.get("document") or "a public plan document"), "pages": d.get("pages"), "result": res}
+
+
+def _example(identity: Any) -> None:
+    ex = load_example()
+    if ex is None:
+        return
+    st.info(f"Worked example: this is what the screen reads from **{ex['document']}**"
+            + (f", {ex['pages']} pages" if ex["pages"] else "") + ". The actions, ratings and funding sources are the plan's own.")
+    _show(identity, ex["result"], editable=False)
+
+
 def render(identity: Any, backend: Any, tenant: str, *, sample_data: bool = True) -> None:
     st.title("Action Portfolio")
     st.caption("Reads the mitigation action tables in a hazard mitigation plan or jurisdictional annex and shows how the plan itself rates and funds its actions. "
@@ -23,11 +49,13 @@ def render(identity: Any, backend: Any, tenant: str, *, sample_data: bool = True
     if sample_data:
         st.info("Demonstration mode. Use a public plan document; do not upload anything confidential.")
     if not ident.can(identity, "pas_view"):
-        st.warning("Sign in with a role that can view the review center to use this screen.")
+        st.warning("Sign in with a role that can view the review center to upload your own plan.")
+        _example(identity)
         return
     up = st.file_uploader("Upload a plan or annex PDF", type=["pdf"], key="portfolio_pdf")
     if up is None:
         st.write("Upload a PDF in the Cook County MJ-HMP annex format (actions labelled “Mitigation Action #n”). Other formats may be read only in part.")
+        _example(identity)
         return
     if getattr(up, "size", 0) > MAX_UPLOAD_MB * 1024 * 1024:
         st.error(f"That file is larger than {MAX_UPLOAD_MB} MB.")
@@ -42,12 +70,16 @@ def render(identity: Any, backend: Any, tenant: str, *, sample_data: bool = True
         st.error("This file could not be read as a PDF.")
         return
     res = ap.analyze(doc["text"])
-    acts = res["actions"]
-    if not acts:
+    if not res["actions"]:
         st.warning("No “Mitigation Action #n” entries were found. The file may be in a different format or scanned as an image.")
         return
+    _show(identity, res, editable=True)
 
-    over: dict[int, dict[str, int]] = st.session_state.setdefault("portfolio_overrides", {})
+
+def _show(identity: Any, res: dict[str, Any], *, editable: bool) -> None:
+    """Show one analysis. ``editable`` is False for the worked example, which takes no corrections."""
+    acts = res["actions"]
+    over: dict[int, dict[str, int]] = st.session_state.setdefault("portfolio_overrides", {}) if editable else {}
     shown = ap.apply_overrides(acts, over)
     s = ap.summarize(shown)
     st.subheader("What the document says")
@@ -68,7 +100,7 @@ def render(identity: Any, backend: Any, tenant: str, *, sample_data: bool = True
     st.caption("Fit score = place-specific (0 to 2) + relevance to vulnerable residents (0 to 2) + 1 if a FEMA hazard mitigation grant is listed as a possible source. "
                "Strong is 4 or 5, Moderate 2 or 3, Weak 0 or 1. The first two parts come from a keyword rule and should be checked by a person; completed "
                "actions and actions the jurisdiction asked to remove are left out.")
-    tier = st.selectbox("Show", ["All", "Strong", "Moderate", "Weak"], key="portfolio_tier")
+    tier = st.selectbox("Show", ["All", "Strong", "Moderate", "Weak"], key="portfolio_tier" if editable else "portfolio_tier_example")
     rows = [a for a in shown if a["counted_in_fit"] and (tier == "All" or a["fit_tier"] == tier)]
     rows.sort(key=lambda a: (-a["fit_score"], a["number"]))
     st.dataframe([{"Action": a["number"], "Title": a["title"][:110], "Status": a["status"], "Plan priority": a["priority"] or "n/a",
@@ -76,7 +108,7 @@ def render(identity: Any, backend: Any, tenant: str, *, sample_data: bool = True
                    "Fit": a["fit_score"], "Tier": a["fit_tier"], "Reviewed": "Yes" if a.get("reviewed") else ""} for a in rows], use_container_width=True)
     st.caption(f"Fit tiers across {sum(s['fit_counts'].values())} actions: " + ", ".join(f"{k} {v}" for k, v in s["fit_counts"].items()))
 
-    if ident.can(identity, "pas_review"):
+    if editable and ident.can(identity, "pas_review"):
         with st.expander("Correct a score"):
             nums = [a["number"] for a in acts]
             n = st.selectbox("Action", nums, key="portfolio_pick")
@@ -87,4 +119,4 @@ def render(identity: Any, backend: Any, tenant: str, *, sample_data: bool = True
                 over[int(n)] = {"place": int(p), "vulnerability": int(v)}
                 st.session_state["portfolio_overrides"] = over
                 st.success(f"Saved for action {n}. This stays in this session only.")
-    st.download_button("Download the table (CSV)", ap.to_csv(shown), file_name="action_portfolio.csv", mime="text/csv", key="portfolio_csv")
+    st.download_button("Download the table (CSV)", ap.to_csv(shown), file_name="action_portfolio.csv", mime="text/csv", key="portfolio_csv" if editable else "portfolio_csv_example")

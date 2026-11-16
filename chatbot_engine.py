@@ -59,7 +59,7 @@ def _load_aid() -> pd.DataFrame:
 
 
 def _load_cooling() -> pd.DataFrame:
-    return _read_cached("cooling_centers.csv", lambda p: pd.read_csv(p, dtype={"zip": str}))
+    return _read_cached("cooling_centers.csv", lambda p: pd.read_csv(p, dtype={"zip": str}, keep_default_na=False))
 
 
 def _load_contacts() -> pd.DataFrame:
