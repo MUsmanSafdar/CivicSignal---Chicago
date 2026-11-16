@@ -1,7 +1,6 @@
-<!-- Grant projects: dark map with a side list. Data is injected by funded_projects_ui.py in place of the DATA marker. -->
-<meta charset="utf-8">
+<!-- Funded projects: county map, live street map and a side list. Data is injected by funded_projects_ui.py in place of the DATA marker. -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Grant projects</title>
+<title>Funded projects</title>
 <style>
 :root{--bg:#0b1020;--panel:#10172b;--card:#131c33;--line:#26324f;--ink:#eef2fb;--muted:#9aa8c7;--gold:#f2c94c;--blue:#5aa6ff;--focus:#8cc0ff;
   --mono:ui-monospace,'SF Mono','Cascadia Mono',Consolas,monospace;--body:'Public Sans','Segoe UI',system-ui,sans-serif;color-scheme:dark}
@@ -11,24 +10,36 @@ html.embed,html.embed body{overflow:hidden}
 button,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .eyebrow{font:600 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
-.steps div{background:var(--bg);padding:14px max(16px,env(safe-area-inset-left,0px))}
-.steps b{display:block;font:600 12px var(--mono);letter-spacing:.14em;color:var(--gold)}
-.steps span{display:block;font-weight:600;margin-top:2px}
-.steps small{display:block;color:var(--muted);font-size:13.5px;margin-top:2px}
+.hero{padding:22px max(16px,env(safe-area-inset-left,0px)) 18px;border-bottom:1px solid var(--line)}
+.hero h1{font-size:clamp(24px,4.6vw,38px);line-height:1.1;margin:6px 0 8px;text-wrap:balance;max-width:24ch}
+.hero p{color:var(--muted);margin:0;max-width:64ch}
+.hero .count{display:flex;gap:22px;flex-wrap:wrap;margin-top:14px}
+.hero .count b{font-size:26px;display:block}.hero .count span{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .shell{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(320px,1fr);min-height:640px}
-.mapwrap{position:relative;background:radial-gradient(700px 500px at 60% 30%,#1b2a52 0%,#0d1430 60%,#0b1020 100%);overflow:hidden;min-width:0}
-.mapwrap svg{display:block;width:100%;height:100%;max-height:760px;padding:84px 16px 44px}
+.mapwrap{position:relative;background:radial-gradient(700px 500px at 60% 30%,#1b2a52 0%,#0d1430 60%,#0b1020 100%);overflow:hidden;min-width:0;min-height:560px}
+.mapwrap svg{display:block;width:100%;height:100%;max-height:760px;padding:128px 16px 44px}
 .mapwrap path{stroke:#0b1020;stroke-width:.8;cursor:pointer;transition:fill .15s}
 .mapwrap path:hover{stroke:#fff;stroke-width:1.4}
 .mapwrap path.sel{stroke:var(--gold);stroke-width:2.4}
 .pin{fill:var(--gold);stroke:#0b1020;stroke-width:1;pointer-events:none;filter:drop-shadow(0 0 5px rgba(242,201,76,.9))}
-.search{position:absolute;left:16px;right:16px;top:14px;max-width:470px;background:rgba(16,23,43,.94);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+#street{position:absolute;inset:0;background:#0b1020}
+#street .leaflet-tile-pane{filter:invert(1) hue-rotate(195deg) brightness(.92) contrast(.9) saturate(.55)}
+#street .leaflet-control-attribution{background:rgba(11,16,32,.8);color:var(--muted);font-size:11px}
+#street .leaflet-control-attribution a{color:var(--blue)}
+#street .leaflet-bar a{background:#10172b;color:var(--ink);border-color:var(--line)}
+#street .leaflet-top.leaflet-left{top:auto;bottom:40px}
+#street .leaflet-popup-content-wrapper,#street .leaflet-popup-tip{background:#10172b;color:var(--ink);border:1px solid var(--line)}
+#street .leaflet-popup-content{margin:10px 12px;font:14px var(--body)}
+.search{position:absolute;z-index:1000;left:16px;right:16px;top:14px;max-width:470px;background:rgba(16,23,43,.95);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 12px 30px rgba(0,0,0,.35)}
 .search .row{display:flex;gap:8px;margin-top:8px}
 .search input{flex:1 1 auto;min-width:0;background:#0b1020;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:16px}
 .search button{flex:0 0 auto;background:#0b1020;border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-weight:600;cursor:pointer;white-space:nowrap}
 .search button:hover{border-color:var(--blue)}
-.legend{position:absolute;left:16px;bottom:12px;display:flex;align-items:center;gap:8px;font:500 12px var(--mono);color:var(--muted)}
+.view{display:flex;gap:6px;margin-top:10px}
+.view button{flex:1 1 0;padding:8px 10px;font-size:14px}
+.view button[aria-pressed="true"]{background:#22305a;border-color:var(--blue)}
+.view button:disabled{opacity:.45;cursor:not-allowed}
+.legend{position:absolute;z-index:500;left:16px;bottom:12px;display:flex;align-items:center;gap:8px;font:500 12px var(--mono);color:var(--muted)}
 .legend i{display:inline-block;width:92px;height:8px;border-radius:4px;background:linear-gradient(90deg,#1c2a55,#2f55b8,#5aa6ff,#bcd9ff)}
 .side{background:var(--panel);border-left:1px solid var(--line);padding:22px max(16px,env(safe-area-inset-right,0px)) 26px 20px;min-width:0}
 .side h2{font-size:26px;line-height:1.15;margin:8px 0 2px;text-wrap:balance}
@@ -41,109 +52,182 @@ button.card{cursor:pointer}button.card:hover{border-color:var(--blue)}
 .tag{display:flex;align-items:center;gap:8px;font:600 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .tag::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--dot,var(--gold));flex:0 0 auto}
 .card strong{display:block;font-size:16.5px;font-weight:600;margin-top:4px;overflow-wrap:anywhere}
-.card em{display:block;font:500 12px var(--mono);font-style:normal;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.card em{display:block;font:500 12px var(--mono);font-style:normal;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:6px;overflow-wrap:anywhere}
+.card .go{color:var(--blue)}
 .facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
 .facts div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .facts b{display:block;font-size:22px}.facts span{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .flag{border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:14.5px;border:1px solid var(--line);background:#16203a}
 .flag.on{border-color:#7a5c12;background:#2a2210}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.seg button{background:var(--card);border:1px solid var(--line);border-radius:980px;padding:7px 12px;font-weight:600;font-size:14px;cursor:pointer;color:var(--muted);min-height:38px}
+.seg button[aria-pressed="true"]{background:#22305a;color:var(--ink);border-color:var(--blue)}
+.warn{border:1px solid #7a5c12;background:#2a2210;border-radius:12px;padding:12px 14px;margin-bottom:14px}
 .note{color:var(--muted);font-size:13px;margin-top:16px}
+.note a{color:var(--blue)}
+.sum p{margin:0 0 12px;font-size:17px;line-height:1.55;max-width:62ch}
+.sum{margin:6px 0 14px}
+.rec{margin:0;display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.rec div{display:grid;grid-template-columns:minmax(0,11rem) minmax(0,1fr);gap:10px;background:var(--card);padding:9px 12px}
+.rec dt{font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rec dd{margin:0;overflow-wrap:anywhere}
 @media (max-width:820px){
-  .steps{display:none}
   .shell{grid-template-columns:minmax(0,1fr);min-height:0}
-  .mapwrap svg{height:auto;max-height:460px;padding:118px 12px 40px}
+  .mapwrap{min-height:0;height:470px}
+  .mapwrap svg{height:100%;padding:150px 12px 40px}
   .side{border-left:0;border-top:1px solid var(--line);padding-left:max(16px,env(safe-area-inset-left,0px))}
-  .search .row{flex-wrap:wrap}.search button{flex:1 1 100%}
+  .search .row{flex-wrap:wrap}.search .row button{flex:1 1 100%}
+  .facts b{font-size:19px}
+  .rec div{grid-template-columns:minmax(0,1fr);gap:2px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-.hero{padding:22px max(16px,env(safe-area-inset-left,0px)) 18px;border-bottom:1px solid var(--line)}
-.hero h1{font-size:clamp(24px,4.6vw,38px);line-height:1.1;margin:6px 0 8px;text-wrap:balance;max-width:22ch}
-.hero p{color:var(--muted);margin:0;max-width:62ch}
-.hero .count{display:flex;gap:22px;flex-wrap:wrap;margin-top:14px}
-.hero .count b{font-size:26px;display:block}.hero .count span{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.seg{display:flex;flex-wrap:wrap;width:fit-content;max-width:100%;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0 0 12px}
-.seg button{background:none;border:0;padding:9px 14px;font-weight:600;cursor:pointer;color:var(--muted);min-height:40px}
-.seg button[aria-pressed="true"]{background:#22305a;color:var(--ink)}
-.warn{border:1px solid #7a5c12;background:#2a2210;border-radius:12px;padding:12px 14px;margin-bottom:14px}
-@media (max-width:820px){.facts b{font-size:19px}}
 </style>
 <div class="hero">
-  <div class="eyebrow">Grant projects</div>
-  <h1>See the mitigation grants at work in your county.</h1>
-  <p>Every Illinois hazard mitigation grant application in FEMA's public records, placed on the map by county and set beside each county's social vulnerability.</p>
+  <div class="eyebrow">Funded projects</div>
+  <h1>See the hazard mitigation grants in your county and town.</h1>
+  <p>Every Illinois application in FEMA's public mitigation grant records: what was funded, what is in progress, what is under review and what was turned down, set beside each county's social vulnerability.</p>
   <div class="count" id="count"></div>
-</div>
-<div class="steps" aria-label="How it works">
-  <div><b>01</b><span>Choose your county</span><small>Type its name or tap it on the map.</small></div>
-  <div><b>02</b><span>See what is funded</span><small>Open, in review, closed and not funded.</small></div>
-  <div><b>03</b><span>Read each project</span><small>The work, who applied, FEMA's status and the federal share.</small></div>
-  <div><b>04</b><span>Spot the gaps</span><small>High-risk, vulnerable counties with no open project.</small></div>
 </div>
 <div class="shell">
   <div class="mapwrap">
     <svg id="map" role="img" aria-label="Map of Illinois counties"></svg>
+    <div id="street" hidden></div>
     <form class="search" id="f" autocomplete="off">
-      <label class="eyebrow" for="q">Your county</label>
-      <div class="row"><input id="q" list="names" placeholder="For example, Cook" aria-describedby="msg"><button type="submit">Show grant projects</button></div>
+      <label class="eyebrow" for="q">Your county or town</label>
+      <div class="row"><input id="q" list="names" placeholder="For example, Cook or Dixon" aria-describedby="msg"><button type="submit">Show grants</button></div>
       <datalist id="names"></datalist>
+      <div class="view" role="group" aria-label="Map view"><button type="button" id="vc" aria-pressed="true">County map</button><button type="button" id="vs" aria-pressed="false" disabled>Street map</button></div>
       <div id="msg" role="status" style="color:var(--gold);font-size:13.5px;margin-top:6px" hidden></div>
     </form>
-    <div class="legend"><span>Lower vulnerability</span><i></i><span>Higher</span></div>
+    <div class="legend" id="legend"><span>Lower vulnerability</span><i></i><span>Higher</span></div>
   </div>
   <div class="side" id="side" aria-live="polite"></div>
 </div>
 <script>
-const DATA = /*DATA*/{"vb":[600,1080],"counties":[],"by":{},"statewide":[],"total":0,"ok":false,"snapshot":false,"rundate":"","svi_min":0.5,"risk_min":3.0,"source":""}/*END*/;
+const DATA = /*DATA*/{"vb":[600,1080],"counties":[],"by":{},"other":[],"total":0,"ok":false,"saved":false,"rundate":"","svi_min":0.5,"risk_min":3.0,"source":""}/*END*/;
 (function(){
-  var NS='http://www.w3.org/2000/svg', C=DATA.counties, byName={}, map=document.getElementById('map'), side=document.getElementById('side'), view='open';
-  var VIEWS=[['open','Open'],['review','In review'],['closed','Closed'],['unfunded','Not funded'],['all','All']];
-  var DOT={open:'#f2c94c',review:'#5aa6ff',closed:'#6f7fa6',unfunded:'#ff7a59',other:'#6f7fa6'};
+  var NS='http://www.w3.org/2000/svg', C=DATA.counties, byName={}, map=document.getElementById('map'), side=document.getElementById('side'), street=document.getElementById('street'),
+      q=document.getElementById('q'), msg=document.getElementById('msg'), vc=document.getElementById('vc'), vs=document.getElementById('vs'), stageNow='open', L_=null, lmap=null, marks={}, redo=null;
+  var STAGE={open:'In progress',closed:'Completed',review:'Under review',no:'Not funded',all:'All'}, DOT={open:'#f2c94c',closed:'#6fcf97',review:'#5aa6ff',no:'#8f6b6b'};
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
   function usd(v){return v>=1e9?'$'+(v/1e9).toFixed(1)+' billion':v>=1e6?'$'+(v/1e6).toFixed(1)+' million':v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+Math.round(v)}
   function plural(n,w){return n+' '+w+(n===1?'':'s')}
   function both(c){return c.svi>=DATA.svi_min&&c.top>=DATA.risk_min}
   function fill(v){var s=['#1c2a55','#24408c','#2f55b8','#4480e0','#7fb4f5','#bcd9ff'];return s[Math.min(5,Math.floor(v*6))]}
   function list(c){return DATA.by[c.n]||[]}
-  function n(l,st){return l.filter(function(p){return p.stage===st}).length}
-  function fed(l){return l.reduce(function(s,p){return s+(p.stage==='open'||p.stage==='closed'?p.fed:0)},0)}
-  var src=DATA.source?' <a href="'+esc(DATA.source)+'" target="_blank" rel="noopener" style="color:var(--blue)">FEMA dataset</a>.':'';
-  var foot='<p class="note">Grant records: FEMA OpenFEMA, HMA Subapplications'+(DATA.rundate?', '+(DATA.snapshot?'saved copy from ':'data as of ')+esc(DATA.rundate):'')+'.'+src+' Each card shows FEMA\'s own status. Open groups Approved, Awarded, Obligated, Subaward Accepted and Closeout Initiated. In review groups Submitted to FEMA and Pending. Not funded groups Ineligible, Not Approved / Denied, Not Selected, Withdrawn and Void. County totals add the federal share of open and closed records. An application that benefits several counties appears under each. Vulnerability scores are sample data.</p>';
+  function nOf(l,s){return l.filter(function(p){return p.stage===s}).length}
+  function funded(l){return l.reduce(function(s,p){return s+(p.stage==='open'||p.stage==='closed'?(p.obl||p.fed):0)},0)}
+  function quiet(){return matchMedia('(prefers-reduced-motion:reduce)').matches}
+  /* every distinct record once (a record can benefit several counties) */
+  var seen={}, ALL=[];Object.keys(DATA.by).forEach(function(k){DATA.by[k].forEach(add)});DATA.other.forEach(add);
+  function add(p){if(!seen[p.id]){seen[p.id]=1;ALL.push(p)}}
+  var TOWNS={};ALL.forEach(function(p){if(p.pt&&p.city){(TOWNS[p.city]=TOWNS[p.city]||{n:p.city,pt:p.pt,l:[]}).l.push(p)}});
+  var foot='<p class="note">Records: FEMA OpenFEMA, HMA Subapplications'+(DATA.rundate?', data as of '+esc(DATA.rundate):'')+(DATA.saved?' (saved copy)':'')+'.'+(DATA.source?' <a href="'+esc(DATA.source)+'" target="_blank" rel="noopener">FEMA dataset</a>.':'')+
+    ' Status wording is FEMA\'s own. "In progress" covers approved, awarded and obligated grants; dollar figures are the amount obligated, or the federal share where none is recorded. A pin marks the applicant\'s town, not the project address: FEMA does not publish project addresses. Vulnerability scores are sample data.</p>';
   map.setAttribute('viewBox','0 0 '+DATA.vb[0]+' '+DATA.vb[1]);
-  C.forEach(function(c){byName[c.n.toLowerCase()]=c;c.open=n(list(c),'open');var p=document.createElementNS(NS,'path');p.setAttribute('d',c.d);p.setAttribute('fill',fill(c.svi));
-    p.setAttribute('tabindex','0');p.setAttribute('role','button');p.setAttribute('aria-label',c.n+' County, '+plural(c.open,'open project'));
+  C.forEach(function(c){byName[c.n.toLowerCase()]=c;c.open=nOf(list(c),'open');var p=document.createElementNS(NS,'path');p.setAttribute('d',c.d);p.setAttribute('fill',fill(c.svi));
+    p.setAttribute('tabindex','0');p.setAttribute('role','button');p.setAttribute('aria-label',c.n+' County, '+plural(c.open,'grant')+' in progress');
     p.addEventListener('click',function(){show(c)});p.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();show(c)}});
-    var t=document.createElementNS(NS,'title');t.textContent=c.n+' County: '+plural(c.open,'open project');p.appendChild(t);map.appendChild(p);c.el=p});
+    var t=document.createElementNS(NS,'title');t.textContent=c.n+' County: '+plural(c.open,'grant')+' in progress';p.appendChild(t);map.appendChild(p);c.el=p});
   C.filter(function(c){return c.open>0}).forEach(function(c){var b=c.el.getBBox(),m=document.createElementNS(NS,'circle');m.setAttribute('class','pin');m.setAttribute('cx',b.x+b.width/2);m.setAttribute('cy',b.y+b.height/2);m.setAttribute('r',Math.min(13,4+Math.sqrt(c.open)*1.6));map.appendChild(m)});
-  document.getElementById('names').innerHTML=C.map(function(c){return '<option value="'+esc(c.n)+'">'}).join('');
-  var seen={},uniq=[];Object.keys(DATA.by).forEach(function(k){DATA.by[k].forEach(function(p){if(!seen[p.id]){seen[p.id]=1;uniq.push(p)}})});DATA.statewide.forEach(function(p){if(!seen[p.id]){seen[p.id]=1;uniq.push(p)}});
-  document.getElementById('count').innerHTML=DATA.ok?'<div><b>'+DATA.total.toLocaleString()+'</b><span>Applications tracked</span></div><div><b>'+n(uniq,'open')+'</b><span>Funded and open</span></div><div><b>'+n(uniq,'review')+'</b><span>In review</span></div><div><b>'+n(uniq,'unfunded')+'</b><span>Not funded</span></div>':'';
-  function card(p){return '<div class="card" style="--dot:'+DOT[p.stage]+'"><span class="tag">'+esc(p.program)+(p.fy?' · FY '+p.fy:'')+(p.kind?' · '+esc(p.kind):'')+'</span><strong>'+esc(p.title)+'</strong>'+(p.who?'<em>'+esc(p.who)+(p.hazard?' · '+esc(p.hazard):'')+'</em>':'')+'<em>'+esc(p.status)+(p.fed>0?' · '+usd(p.fed)+' federal share'+(p.stage==='review'||p.stage==='unfunded'?' requested':''):'')+(p.id?' · '+esc(p.id):'')+'</em></div>'}
-  function cards(l){var v=view==='all'?l:l.filter(function(p){return p.stage===view});
-    if(!v.length)return '<div class="card"><strong>'+(l.length?'Nothing in this group. Try another filter; this area has '+plural(l.length,'record')+' in all.':'No FEMA mitigation grant records.')+'</strong></div>';
-    var shown=v.slice(0,60);return shown.map(card).join('')+(v.length>shown.length?'<div class="card"><strong>'+(v.length-shown.length)+' more not shown.</strong><em>Showing the first 60, newest first</em></div>':'')}
-  function seg(l){return '<div class="seg" role="group" aria-label="Which records to show">'+VIEWS.map(function(v){var k=v[0]==='all'?l.length:n(l,v[0]);return '<button type="button" data-v="'+v[0]+'" aria-pressed="'+(view===v[0])+'">'+v[1]+' '+k+'</button>'}).join('')+'</div>'}
-  function wire(again){side.querySelectorAll('.seg button').forEach(function(b){b.onclick=function(){view=b.dataset.v;again()}});
-    side.querySelectorAll('button.card').forEach(function(b){b.onclick=function(){if(b.dataset.n==='*'){statewide()}else{show(byName[b.dataset.n.toLowerCase()])}}});var bk=document.getElementById('bk');if(bk)bk.onclick=overview}
+  document.getElementById('names').innerHTML=C.map(function(c){return '<option value="'+esc(c.n)+' County">'}).join('')+Object.keys(TOWNS).sort().map(function(t){return '<option value="'+esc(t)+'">'}).join('');
+  document.getElementById('count').innerHTML=DATA.ok?'<div><b>'+DATA.total.toLocaleString()+'</b><span>Applications on record</span></div><div><b>'+nOf(ALL,'open')+'</b><span>Funded, in progress</span></div><div><b>'+nOf(ALL,'closed')+'</b><span>Completed</span></div><div><b>'+Object.keys(TOWNS).length+'</b><span>Towns on the map</span></div>':'';
+  function card(p){var where=[p.who,p.city].filter(Boolean).join(' · ');
+    return '<button class="card" style="--dot:'+DOT[p.stage]+'" data-id="'+esc(p.id)+'"><span class="tag">'+esc(p.program)+(p.fy?' · FY '+p.fy:'')+'</span><strong>'+esc(p.title)+'</strong>'+
+      (where?'<em>'+esc(where)+'</em>':'')+'<em>'+esc(p.status)+(p.obl>0?' · '+usd(p.obl)+' obligated':p.fed>0?' · '+usd(p.fed)+' federal share':'')+(p.hazard?' · '+esc(p.hazard):'')+'</em>'+
+      '<em class="go">Read the plain-language summary →</em></button>'}
+  function cards(l){var v=stageNow==='all'?l:l.filter(function(p){return p.stage===stageNow});
+    if(!v.length)return '<div class="card"><strong>'+(l.length?'Nothing under "'+STAGE[stageNow]+'". Try another filter.':'No FEMA mitigation grant applications on record.')+'</strong></div>';
+    var shown=v.slice(0,60);return shown.map(card).join('')+(v.length>shown.length?'<div class="card"><strong>'+(v.length-shown.length)+' more not shown.</strong><em>Showing the first 60</em></div>':'')}
+  function seg(l){return '<div class="seg" role="group" aria-label="Which grants to show">'+['open','closed','review','no','all'].map(function(s){return '<button type="button" data-s="'+s+'" aria-pressed="'+(stageNow===s)+'">'+STAGE[s]+' '+(s==='all'?l.length:nOf(l,s))+'</button>'}).join('')+'</div>'}
+  function wire(again){redo=again;side.querySelectorAll('.seg button').forEach(function(b){b.onclick=function(){stageNow=b.dataset.s;again()}});
+    side.querySelectorAll('button.card').forEach(function(b){b.onclick=function(){if(b.dataset.id){open_(b.dataset.id,again)}else if(b.dataset.n==='*'){others()}else if(b.dataset.n){show(byName[b.dataset.n.toLowerCase()])}}});var bk=document.getElementById('bk');if(bk)bk.onclick=function(){overview();view(false)}}
   function mark(c){C.forEach(function(x){x.el.classList.toggle('sel',x===c)})}
-  function jump(){if(matchMedia('(max-width:820px)').matches){side.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'})}}
-  function overview(){mark(null);document.getElementById('q').value='';
-    if(!DATA.ok){side.innerHTML='<div class="eyebrow">Statewide view</div><h2>Grant records are not available right now</h2><div class="warn">FEMA\'s public grant data could not be loaded, so no projects are shown. The map shows county vulnerability only. Use Try again above the map.</div>'+foot;return}
+  /* one grant in plain language: three reading levels, English or Spanish, read aloud by the browser. Every sentence is built from FEMA's record; nothing is generated. */
+  var BYID={};ALL.forEach(function(p){BYID[p.id]=p});var level='standard',lang='en',speaking=false;
+  var PROG={HMGP:{en:'funds projects that reduce disaster risk after a presidentially declared disaster',es:'financia proyectos que reducen el riesgo de desastres después de una declaración presidencial de desastre'},
+    BRIC:{en:'funds projects that reduce disaster risk before a disaster happens',es:'financia proyectos que reducen el riesgo antes de que ocurra un desastre'},
+    PDM:{en:'funds planning and projects that reduce risk before a disaster happens',es:'financia planes y proyectos que reducen el riesgo antes de que ocurra un desastre'},
+    FMA:{en:'funds projects that reduce flood damage to buildings insured under the National Flood Insurance Program',es:'financia proyectos que reducen los daños por inundación en edificios asegurados por el Programa Nacional de Seguro contra Inundaciones'}};
+  var TX={en:{simple:'Simple',standard:'Standard',detailed:'Detailed',level:'Reading level',listen:'Listen',stop:'Stop',back:'Back to the list',facts:'From FEMA\'s record',mapbtn:'Show {c} on the street map',
+      open:'approved and under way',closed:'finished',review:'still being reviewed',no:'not funded',
+      k:{id:'FEMA record',program:'Program',fy:'Fiscal year',who:'Applicant',city:'Applicant\'s town',co:'Counties that benefit',what:'Type of work',hazard:'Main hazard',status:'FEMA status',fed:'Federal share',obl:'Obligated so far'},
+      note:'The title, status and type of work are shown in FEMA\'s own words. FEMA removes addresses from its public records.'},
+    es:{simple:'Sencillo',standard:'Estándar',detailed:'Detallado',level:'Nivel de lectura',listen:'Escuchar',stop:'Detener',back:'Volver a la lista',facts:'Del registro de FEMA',mapbtn:'Mostrar {c} en el mapa de calles',
+      open:'aprobada y en marcha',closed:'terminada',review:'todavía en revisión',no:'sin financiamiento',
+      k:{id:'Registro de FEMA',program:'Programa',fy:'Año fiscal',who:'Solicitante',city:'Localidad del solicitante',co:'Condados beneficiados',what:'Tipo de trabajo',hazard:'Peligro principal',status:'Estado según FEMA',fed:'Aporte federal',obl:'Comprometido hasta ahora'},
+      note:'El título, el estado y el tipo de trabajo aparecen con las palabras de FEMA, en inglés. FEMA elimina las direcciones de sus registros públicos.'}};
+  function money(v){return '$'+Math.round(v).toLocaleString('en-US')}
+  function join(a,l){return a.length<2?a.join(''):a.slice(0,-1).join(', ')+(l==='es'?' y ':' and ')+a[a.length-1]}
+  function summary(p,lv,l){var es=l==='es',who=p.who||(es?'Un solicitante':'An applicant'),inCity=p.city?(es?' de '+p.city:' in '+p.city):'',st=TX[l][p.stage],out=[];
+    var cash=p.obl>0?(es?'FEMA ha comprometido '+money(p.obl)+'.':'FEMA has committed '+money(p.obl)+'.'):p.fed>0?(p.stage==='no'?(es?'La solicitud pedía '+money(p.fed)+' en fondos federales.':'The request was for '+money(p.fed)+' in federal money.'):(es?'El aporte federal registrado es de '+money(p.fed)+'.':'The federal share on record is '+money(p.fed)+'.')):'';
+    if(lv==='simple'){out.push(es?who+inCity+' pidió dinero a FEMA para reducir daños por desastres.':who+inCity+' asked FEMA for money to reduce disaster damage.');
+      out.push(es?'El trabajo se llama: «'+p.title+'».':'The work is called: "'+p.title+'".');out.push(es?'Esta solicitud está '+st+'.':'This grant is '+st+'.');if(cash)out.push(cash);return [out.join(' ')]}
+    var prog=PROG[p.program.split(' ')[0]],pname=p.pf||p.program;
+    out.push(es?who+inCity+' solicitó una subvención de mitigación de riesgos de FEMA'+(p.fy?' en el año fiscal '+p.fy:'')+'.':who+inCity+' applied for a FEMA hazard mitigation grant'+(p.fy?' in fiscal year '+p.fy:'')+'.');
+    out.push(es?'La solicitud se titula «'+p.title+'»'+(p.what&&p.what!==p.title?' y FEMA la clasifica como: '+p.what:'')+'.':'The application is titled "'+p.title+'"'+(p.what&&p.what!==p.title?' and FEMA classifies the work as: '+p.what:'')+'.');
+    var one=[out.join(' ')],two=[];
+    two.push(es?'Se presentó al programa '+pname+(prog?', que '+prog.es:'')+'.':'It was submitted to the '+pname+' program'+(prog?', which '+prog.en:'')+'.');
+    if(p.hazard)two.push(es?'El peligro principal indicado es: '+p.hazard+'.':'The main hazard named is: '+p.hazard+'.');
+    if(p.co&&p.co.length)two.push(es?(p.co.length>1?'Beneficia a los condados de '+join(p.co,l)+'.':'Beneficia al condado de '+p.co[0]+'.'):'It benefits '+join(p.co,l)+(p.co.length>1?' counties.':' County.'));
+    var three=[es?'El estado según FEMA es «'+p.status+'», es decir, la solicitud está '+st+'.':'FEMA\'s status is "'+p.status+'", which means the grant is '+st+'.'];if(cash)three.push(cash);
+    if(lv==='detailed'){if(p.fed>0&&p.obl>0&&Math.round(p.fed)!==Math.round(p.obl))three.push(es?'El aporte federal registrado es de '+money(p.fed)+'.':'The federal share on record is '+money(p.fed)+'.');
+      three.push(es?'«Comprometido» es el dinero que FEMA ya reservó para esta subvención; el aporte federal es la parte del costo que cubre el gobierno federal.':'"Committed" is money FEMA has already set aside for this grant; the federal share is the part of the cost the federal government covers.');
+      var four=[es?'El número de registro de FEMA es '+p.id+'.':'The FEMA record number is '+p.id+'.',es?'FEMA no publica la dirección del proyecto, por eso el mapa muestra la localidad del solicitante.':'FEMA does not publish the project address, so the map shows the applicant\'s town.'];
+      return [one[0],two.join(' '),three.join(' '),four.join(' ')]}
+    return [one[0],two.join(' '),three.join(' ')]}
+  function hush(){if('speechSynthesis' in window){speechSynthesis.cancel()}speaking=false}
+  function open_(id,again){var p=BYID[id];if(!p)return;hush();var first=true;
+    function draw(){var T=TX[lang],paras=summary(p,level,lang),k=T.k,rows=[[k.id,p.id],[k.program,p.pf||p.program],[k.fy,p.fy||''],[k.who,p.who],[k.city,p.city],[k.co,(p.co||[]).join(', ')],[k.what,p.what],[k.hazard,p.hazard],[k.status,p.status],[k.fed,p.fed>0?money(p.fed):''],[k.obl,p.obl>0?money(p.obl):'']].filter(function(r){return r[1]!==''&&r[1]!=null});
+      side.innerHTML='<button class="back" id="bk2">← '+T.back+'</button><div class="tag" style="--dot:'+DOT[p.stage]+';margin-top:14px">'+esc(p.program)+(p.fy?' · FY '+p.fy:'')+(p.city?' · '+esc(p.city):'')+'</div><h2 lang="en">'+esc(p.title)+'</h2>'+
+        '<div class="seg" role="group" aria-label="'+T.level+'" style="margin-top:14px">'+['simple','standard','detailed'].map(function(v){return '<button type="button" data-lv="'+v+'" aria-pressed="'+(level===v)+'">'+T[v]+'</button>'}).join('')+'</div><div class="eyebrow" style="margin:-4px 0 12px">'+T.level+'</div>'+
+        '<div class="seg" role="group" aria-label="Language"><button type="button" data-lg="en" aria-pressed="'+(lang==='en')+'" lang="en">English</button><button type="button" data-lg="es" aria-pressed="'+(lang==='es')+'" lang="es">Español</button>'+('speechSynthesis' in window?'<button type="button" id="say" aria-pressed="'+speaking+'">'+(speaking?T.stop:T.listen)+'</button>':'')+'</div>'+
+        '<div class="sum" lang="'+lang+'">'+paras.map(function(t){return '<p>'+esc(t)+'</p>'}).join('')+'</div>'+
+        (p.pt?'<button class="card" id="tomap"><strong class="go" style="margin:0">'+esc(T.mapbtn.replace('{c}',p.city))+' →</strong></button>':'')+
+        '<div class="eyebrow" style="margin:18px 0 8px">'+T.facts+'</div><dl class="rec">'+rows.map(function(r){return '<div><dt>'+esc(r[0])+'</dt><dd>'+esc(r[1])+'</dd></div>'}).join('')+'</dl><p class="note">'+esc(T.note)+'</p>'+foot;
+      document.getElementById('bk2').onclick=function(){hush();again()};
+      side.querySelectorAll('[data-lv]').forEach(function(b){b.onclick=function(){hush();level=b.dataset.lv;draw()}});
+      side.querySelectorAll('[data-lg]').forEach(function(b){b.onclick=function(){hush();lang=b.dataset.lg;draw()}});
+      var say=document.getElementById('say');if(say)say.onclick=function(){if(speaking){hush();draw();return}var u=new SpeechSynthesisUtterance(paras.join(' '));u.lang=lang==='es'?'es-US':'en-US';u.rate=.95;u.onend=u.onerror=function(){if(speaking){speaking=false;if(document.getElementById('say'))draw()}};speaking=true;speechSynthesis.speak(u);draw()};
+      var tm=document.getElementById('tomap');if(tm)tm.onclick=function(){fly(p.city)};
+      if(first){first=false;toSide()}}
+    draw()}
+  function toSide(){if(matchMedia('(max-width:820px)').matches){side.scrollIntoView({behavior:quiet()?'auto':'smooth',block:'start'})}}
+  function overview(){mark(null);q.value='';
+    if(!DATA.ok){side.innerHTML='<div class="eyebrow">Statewide view</div><h2>Grant records are not available right now</h2><div class="warn">FEMA\'s public grant data could not be loaded, so no projects are shown. The map shows county vulnerability only. Use Try FEMA again above the map.</div>'+foot;wire(overview);return}
     var rank=C.filter(function(c){return c.open>0}).sort(function(a,b){return b.open-a.open||b.svi-a.svi});
     var gaps=C.filter(function(c){return both(c)&&c.open===0}).sort(function(a,b){return b.svi-a.svi});
-    side.innerHTML='<div class="eyebrow">Statewide view</div><h2>Counties with open mitigation projects</h2><div class="sub">Showing '+rank.length+' of '+C.length+' counties</div><div class="cards">'+
-      (DATA.statewide.length?'<button class="card" data-n="*"><span class="tag">'+plural(n(DATA.statewide,'open'),'open project')+'</span><strong>Statewide and multi-state</strong><em>'+plural(DATA.statewide.length,'record')+' · '+usd(fed(DATA.statewide))+' federal share</em></button>':'')+
-      rank.map(function(c){var l=list(c);return '<button class="card" data-n="'+esc(c.n)+'"><span class="tag">'+plural(c.open,'open project')+'</span><strong>'+esc(c.n)+' County</strong><em>'+plural(l.length,'record')+' · '+usd(fed(l))+' federal share · Vulnerability '+c.svi.toFixed(2)+'</em></button>'}).join('')+'</div>'+
-      (gaps.length?'<div class="eyebrow" style="margin:20px 0 10px">High risk and vulnerability, no open project</div><div class="cards">'+gaps.map(function(c){var l=list(c);return '<button class="card" data-n="'+esc(c.n)+'" style="--dot:#ff7a59"><span class="tag">No open project</span><strong>'+esc(c.n)+' County</strong><em>Vulnerability '+c.svi.toFixed(2)+' · Highest hazard '+c.top.toFixed(1)+' of 5 · '+plural(n(l,'unfunded'),'application')+' not funded</em></button>'}).join('')+'</div><p class="note">Listed when vulnerability is at least '+DATA.svi_min.toFixed(2)+' and the highest hazard score is at least '+DATA.risk_min.toFixed(1)+' of 5. This is a CivicSignal screening rule on sample scores, not a federal standard.</p>':'')+foot;wire(overview)}
+    side.innerHTML='<div class="eyebrow">Statewide view</div><h2>Counties with grants in progress</h2><div class="sub">Showing '+rank.length+' of '+C.length+' counties</div><div class="cards">'+
+      rank.map(function(c){var l=list(c);return '<button class="card" data-n="'+esc(c.n)+'"><span class="tag">'+plural(c.open,'grant')+' in progress</span><strong>'+esc(c.n)+' County</strong><em>'+plural(l.length,'application')+' on record · '+usd(funded(l))+' funded · Vulnerability '+c.svi.toFixed(2)+'</em></button>'}).join('')+
+      (DATA.other.length?'<button class="card" data-n="*" style="--dot:#6f7fa6"><span class="tag">'+plural(nOf(DATA.other,'open'),'grant')+' in progress</span><strong>No Illinois county named</strong><em>'+plural(DATA.other.length,'application')+' on record, statewide or county not stated</em></button>':'')+'</div>'+
+      (gaps.length?'<div class="eyebrow" style="margin:20px 0 10px">High risk and vulnerability, no grant in progress</div><div class="cards">'+gaps.map(function(c){return '<button class="card" data-n="'+esc(c.n)+'" style="--dot:#ff7a59"><span class="tag">No grant in progress</span><strong>'+esc(c.n)+' County</strong><em>Vulnerability '+c.svi.toFixed(2)+' · Highest hazard '+c.top.toFixed(1)+' of 5 · '+plural(list(c).length,'application')+' on record</em></button>'}).join('')+'</div><p class="note">Listed when vulnerability is at least '+DATA.svi_min.toFixed(2)+' and the highest hazard score is at least '+DATA.risk_min.toFixed(1)+' of 5. This is a CivicSignal screening rule on sample scores, not a federal standard.</p>':'')+foot;wire(overview)}
   function detail(title,sub,l,flag,again){
     side.innerHTML='<button class="back" id="bk">← All counties</button><h2>'+esc(title)+'</h2><div class="sub">'+esc(sub)+'</div>'+
-      '<div class="facts"><div><b>'+n(l,'open')+'</b><span>Open</span></div><div><b>'+l.length+'</b><span>Records</span></div><div><b>'+usd(fed(l))+'</b><span>Federal share</span></div></div>'+flag+seg(l)+'<div class="cards">'+cards(l)+'</div>'+foot;wire(again)}
-  function show(c,quiet){mark(c);document.getElementById('q').value=c.n;document.getElementById('msg').hidden=true;
-    if(!DATA.ok){side.innerHTML='<button class="back" id="bk">← All counties</button><h2>'+esc(c.n)+' County</h2><div class="sub">'+esc(c.r)+' Illinois</div><div class="warn">Grant records are not available right now.</div><div class="facts"><div><b>'+c.svi.toFixed(2)+'</b><span>Vulnerability</span></div><div><b>'+c.top.toFixed(1)+'</b><span>Highest hazard</span></div><div><b>–</b><span>Records</span></div></div>'+foot;wire(overview);if(!quiet)jump();return}
-    var flag='<div class="flag'+(both(c)?' on':'')+'">Vulnerability <b>'+c.svi.toFixed(2)+'</b> of 1 · highest hazard score <b>'+c.top.toFixed(1)+'</b> of 5.'+(both(c)?' <b>High on both</b> under the screening rule.':'')+'</div>';
-    detail(c.n+' County',c.r+' Illinois',list(c),flag,function(){show(c,true)});if(!quiet)jump()}
-  function statewide(quiet){mark(null);detail('Statewide and multi-state','Not tied to Illinois counties alone',DATA.statewide,'',function(){statewide(true)});if(!quiet)jump()}
-  document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();var v=document.getElementById('q').value.trim().toLowerCase().replace(/\s+county$/,''),m=document.getElementById('msg');
-    if(byName[v]){show(byName[v])}else{m.textContent=v?'No Illinois county matches that name. Check the spelling or tap the map.':'Type a county name or tap the map.';m.hidden=false}});
+      '<div class="facts"><div><b>'+nOf(l,'open')+'</b><span>In progress</span></div><div><b>'+l.length+'</b><span>On record</span></div><div><b>'+usd(funded(l))+'</b><span>Funded</span></div></div>'+flag+seg(l)+'<div class="cards">'+cards(l)+'</div>'+foot;wire(again)}
+  function show(c,keep){mark(c);q.value=c.n+' County';msg.hidden=true;
+    if(!DATA.ok){side.innerHTML='<button class="back" id="bk">← All counties</button><h2>'+esc(c.n)+' County</h2><div class="sub">'+esc(c.r)+' Illinois</div><div class="warn">Grant records are not available right now.</div><div class="facts"><div><b>'+c.svi.toFixed(2)+'</b><span>Vulnerability</span></div><div><b>'+c.top.toFixed(1)+'</b><span>Highest hazard</span></div><div><b>–</b><span>Grants</span></div></div>'+foot;wire(overview);return}
+    var l=list(c),flag='<div class="flag'+(both(c)?' on':'')+'">Vulnerability <b>'+c.svi.toFixed(2)+'</b> of 1 · highest hazard score <b>'+c.top.toFixed(1)+'</b> of 5.'+(both(c)?' <b>High on both</b> under the screening rule.':'')+'</div>';
+    detail(c.n+' County',c.r+' Illinois',l,flag,function(){show(c,true)});
+    if(!keep){var pts=l.filter(function(p){return p.pt}).map(function(p){return p.pt});if(pts.length&&L_){view(true);lmap.fitBounds(L_.latLngBounds(pts).pad(0.25),{maxZoom:12,animate:!quiet()})}else{view(false)}toSide()}}
+  function town(name,keep){var t=TOWNS[name];if(!t)return;mark(null);q.value=t.n;msg.hidden=true;
+    detail(t.n,'Applicants based in this town',t.l,'',function(){town(name,true)});if(!keep)toSide()}
+  function others(){mark(null);detail('No Illinois county named','Statewide, or county not stated',DATA.other,'',others);view(false);toSide()}
+  /* street map: Leaflet + OpenStreetMap, loaded only when online */
+  function view(on){if(on&&!L_)on=false;street.hidden=!on;map.style.visibility=on?'hidden':'visible';document.getElementById('legend').hidden=on;vc.setAttribute('aria-pressed',String(!on));vs.setAttribute('aria-pressed',String(on));if(on){lmap.invalidateSize()}}
+  function fly(name){var t=TOWNS[name];if(!t)return;if(!L_){msg.textContent='The street map needs an internet connection.';msg.hidden=false;return}
+    view(true);lmap.setView(t.pt,14,{animate:!quiet()});if(marks[name])marks[name].openPopup();if(matchMedia('(max-width:820px)').matches){document.querySelector('.mapwrap').scrollIntoView({behavior:quiet()?'auto':'smooth',block:'start'})}}
+  function startStreet(){L_=window.L;lmap=L_.map(street,{zoomControl:true,scrollWheelZoom:false,attributionControl:true}).setView([40.0,-89.2],6);
+    L_.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'}).addTo(lmap);
+    Object.keys(TOWNS).forEach(function(k){var t=TOWNS[k],o=nOf(t.l,'open');
+      marks[k]=L_.circleMarker(t.pt,{radius:Math.min(16,6+Math.sqrt(t.l.length)*2),color:'#0b1020',weight:1.5,fillColor:o?'#f2c94c':'#8fa3cf',fillOpacity:.92}).addTo(lmap)
+        .bindPopup('<b>'+esc(t.n)+'</b><br>'+plural(t.l.length,'application')+' on record'+(o?', '+o+' in progress':'')).on('click',function(){town(k)})});
+    vs.disabled=false;vs.title=''}
+  vs.title='Loading the street map…';
+  vc.onclick=function(){view(false)};vs.onclick=function(){view(true)};
+  (function(){var css=document.createElement('link');css.rel='stylesheet';css.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';document.head.appendChild(css);
+    var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';s.onload=function(){try{startStreet()}catch(e){L_=null;vs.title='Street map unavailable'}};s.onerror=function(){vs.title='The street map needs an internet connection'};document.head.appendChild(s)})();
+  document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();var raw=q.value.trim(),v=raw.toLowerCase().replace(/\s+county$/,''),t=Object.keys(TOWNS).filter(function(k){return k.toLowerCase()===raw.toLowerCase()})[0];
+    if(/county$/i.test(raw)&&byName[v]){show(byName[v])}else if(t){town(t);fly(t)}else if(byName[v]){show(byName[v])}else{msg.textContent=raw?'No Illinois county or mapped town matches that name. Check the spelling or tap the map.':'Type a county or town, or tap the map.';msg.hidden=false}});
   overview();
   var fe=null;try{fe=window.frameElement}catch(e){}
   if(fe){var root=document.documentElement,last=0;root.classList.add('embed');
