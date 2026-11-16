@@ -530,8 +530,8 @@ document.addEventListener('click',function(e){var a=e.target.closest&&e.target.c
   var fe=null;try{fe=window.frameElement}catch(e){}
   if(!fe)return;
   var root=document.documentElement,last=0;root.classList.add('embed');
-  function fit(){var h=Math.ceil(root.getBoundingClientRect().height);if(h>0&&Math.abs(h-last)>1){last=h;fe.style.height=h+'px';fe.setAttribute('height',h);var box=fe.parentElement;for(var i=0;i<3&&box&&box.getAttribute('data-testid')!=='stElementContainer';i++){box=box.parentElement}if(!box)box=fe.parentElement;if(box){box.style.flex='0 0 '+h+'px';box.style.height=h+'px'}}}
+  function fit(){var h=Math.ceil(root.getBoundingClientRect().height);if(h>0&&Math.abs(h-last)>1){last=h;fe.style.height=h+'px';fe.setAttribute('height',h)}}
   if('ResizeObserver' in window){new ResizeObserver(fit).observe(document.body)}
-  addEventListener('load',fit);addEventListener('resize',fit);fit();setTimeout(fit,400);setTimeout(fit,1500);
+  addEventListener('load',fit);addEventListener('resize',fit);addEventListener('pagehide',function(){try{fe.style.height=''}catch(e){}});fit();setTimeout(fit,400);setTimeout(fit,1500);
 })();
 </script>
