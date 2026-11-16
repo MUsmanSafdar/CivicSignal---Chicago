@@ -1,0 +1,53 @@
+# Opens the live app in a real browser a few times a day so Streamlit Community Cloud does not put it to sleep.
+# If the app is already asleep, it presses the wake-up button. Run it by hand from the Actions tab to test it.
+name: Keep app awake
+
+on:
+  schedule:
+    - cron: "23 */5 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  visit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      APP_URL: https://civicsignal-chicago.streamlit.app/
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser
+        run: |
+          pip install playwright==1.49.1
+          python -m playwright install --with-deps chromium
+      - name: Visit the app
+        run: |
+          cat > visit.py <<'PY'
+          import os, re, sys, time
+          from playwright.sync_api import sync_playwright
+
+          url = os.environ["APP_URL"]
+          with sync_playwright() as p:
+              browser = p.chromium.launch()
+              page = browser.new_page()
+              page.goto(url, wait_until="domcontentloaded", timeout=120_000)
+              deadline, woke, up = time.time() + 480, False, False
+              while time.time() < deadline and not up:
+                  wake = page.get_by_role("button", name=re.compile("get this app back up", re.I))
+                  if not woke and wake.count():
+                      wake.first.click()
+                      woke = True
+                      print("App was asleep; pressed the wake-up button.")
+                  up = any(f.locator('[data-testid="stApp"]').count() for f in page.frames)
+                  if not up:
+                      page.wait_for_timeout(5000)
+              if up:
+                  page.wait_for_timeout(20_000)   # stay long enough to count as a visit
+              browser.close()
+          print("App is up." if up else "App did not load in time.")
+          sys.exit(0 if up else 1)
+          PY
+          python visit.py
